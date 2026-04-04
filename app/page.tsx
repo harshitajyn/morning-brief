@@ -99,7 +99,7 @@ const save=(s: any)=>{try{localStorage?.setItem?.(SK,JSON.stringify(s))}catch{}}
 // ════════════════════════════════════════════════════════════
 // BRIEF GENERATORS
 // ════════════════════════════════════════════════════════════
-function generateWhatsAppBrief(emails,isEvening) {
+function generateWhatsAppBrief(emails: any, isEvening: boolean) {
   const ds=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
   if(isEvening){
     let m=`🌙 *EVENING BRIEF*\n${ds}\n\n`;
