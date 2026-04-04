@@ -95,7 +95,7 @@ const FOCUS_TASKS = [
 // ════════════════════════════════════════════════════════════
 const SK="mb_v3";
 const load=()=>{try{return JSON.parse(localStorage?.getItem?.(SK)||"null")}catch{return null}};
-const save=(s)=>{try{localStorage?.setItem?.(SK,JSON.stringify(s))}catch{}};
+const save=(s: any)=>{try{localStorage?.setItem?.(SK,JSON.stringify(s))}catch{}};
 
 // ════════════════════════════════════════════════════════════
 // BRIEF GENERATORS
