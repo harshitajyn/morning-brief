@@ -11,7 +11,6 @@ const C = {
   cal:"#5B8A72",calBg:"#EDF5F0",
   email:"#6B7FD7",emailBg:"#EDEFFE",
   focus:"#8B7EC8",focusBg:"#F0EDF8",
-  wa:"#25D366",waBg:"#E9FBF0",
   dismiss:"#FF6B6B",dismissBg:"#FFE8E8",
   done:"#4CAF50",doneBg:"#E8F5E9",
   later:"#FF9800",laterBg:"#FFF3E0",
@@ -50,7 +49,7 @@ const eveQuote = EVE_QUOTES[new Date().getDate()%EVE_QUOTES.length];
 const FALLBACK_EMAILS = [
   {id:"e-19d5c224",from:"Surge (donotreply@wpvip.com)",subject:"Surge - Contact Us (Dr Rashmi MR)",tag:"UPDATE",account:"work",unread:true},
   {id:"e-19d5c0f3",from:"Helpdesk Peak XV",subject:"Mimecast: Potential Spam on hold for harshita@peakxv.com",tag:"FYI",account:"work",unread:true},
-  {id:"e-19d5afa1",from:"Helpdesk Peak XV",subject:"Mimecast: Potential Spam on hold for harshita@peakxv.com",tag:"FYI",account:"work",unread:true},
+  {id:"e-personal-urgent",from:"Harshita Jain (harshita@peakxv.com)",subject:"Urgent",tag:"ACTION",account:"personal",unread:true},
   {id:"e-19d58de5",from:"Apple",subject:"Your Apple Account password has been reset",tag:"FYI",account:"work",unread:true},
 ];
 
@@ -106,36 +105,6 @@ const save=(s: any)=>{try{localStorage?.setItem?.(SK,JSON.stringify(s))}catch{}}
 // ════════════════════════════════════════════════════════════
 // BRIEF GENERATORS
 // ════════════════════════════════════════════════════════════
-function generateWhatsAppBrief(emails: any, isEvening: boolean) {
-  const ds=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
-  if(isEvening){
-    let m=`🌙 *EVENING BRIEF*\n${ds}\n\n`;
-    m+=`📋 *STILL PENDING*\n`;
-    ACTION_ITEMS.forEach((a,i)=>{m+=`${i+1}. ${a.title}\n`;});
-    m+=`\n🔁 *FOLLOW-UPS OUTSTANDING*\n`;
-    FOLLOW_UPS.forEach(f=>{m+=`• ${f.name} — ${f.task} (${f.days}d)\n`;});
-    m+=`\n📅 *TOMORROW*\n`;
-    FALLBACK_CAL_TOMORROW.forEach(e=>{m+=`• ${e.time} — ${e.title}\n`;});
-    m+=`\n✉️ *UNREAD PRIORITY* (${emails.length})\n`;
-    emails.forEach(e=>{m+=`• [${e.tag}] ${e.from} — ${e.subject}\n`;});
-    m+=`\n🧘 *WIND DOWN*\nReview what got done. Set tomorrow's top 3.\n\n`;
-    m+=`💬 _"${eveQuote.t}"_\n— ${eveQuote.a}`;
-    return m;
-  }
-  let m=`☀️ *MORNING BRIEF*\n${ds}\n\n`;
-  m+=`📅 *CALENDAR* (${FALLBACK_CAL_TODAY.length})\n`;
-  FALLBACK_CAL_TODAY.forEach(e=>{m+=`• ${e.time} — ${e.title}\n`;});
-  m+=`\n✉️ *PRIORITY EMAILS* (${emails.length})\n`;
-  emails.forEach(e=>{m+=`• [${e.tag}] ${e.from} — ${e.subject}\n`;});
-  m+=`\n🔴 *ACTION ITEMS*\n`;
-  ACTION_ITEMS.forEach((a,i)=>{m+=`${i+1}. ${a.title}\n`;});
-  m+=`\n🔁 *FOLLOW-UPS*\n`;
-  FOLLOW_UPS.forEach(f=>{m+=`• ${f.name} — ${f.task} (${f.days}d)\n`;});
-  m+=`\n🧘 *FOCUS*\nBlock 2–3 hrs for content strategy.\n\n`;
-  m+=`💬 _"${todayQuote.t}"_\n— ${todayQuote.a}`;
-  return m;
-}
-
 function generateVoiceBrief(emails,isEvening) {
   if(isEvening){
     const pending=ACTION_ITEMS.length;
@@ -166,10 +135,6 @@ function generateVoiceBrief(emails,isEvening) {
 // ════════════════════════════════════════════════════════════
 // COMPONENTS
 // ════════════════════════════════════════════════════════════
-const WA_ICON = ()=>(
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-);
-
 const CHECK_ICON = ()=>(
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.done} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
 );
@@ -301,41 +266,6 @@ function Sheet({item,type,onClose}){
   );
 }
 
-function WhatsAppModal({onClose,emails,isEvening}){
-  const [phone,setPhone]=useState("");const [sent,setSent]=useState(false);const [preview,setPreview]=useState(false);
-  const brief=generateWhatsAppBrief(emails,isEvening);
-  const send=ph=>{const url=ph?`https://wa.me/${ph}?text=${encodeURIComponent(brief)}`:`https://wa.me/?text=${encodeURIComponent(brief)}`;window.open(url,"_blank");setSent(true);};
-  return(
-    <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end",animation:"fadeIn .2s ease"}} onClick={onClose}>
-      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.4)",backdropFilter:"blur(6px)"}}/>
-      <div onClick={e=>e.stopPropagation()} style={{position:"relative",background:C.card,borderRadius:"24px 24px 0 0",padding:"16px 24px 40px",maxHeight:"85vh",overflowY:"auto",animation:"slideUp .3s cubic-bezier(.2,.8,.3,1)"}}>
-        <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 16px"}}/>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-          <div style={{width:40,height:40,borderRadius:12,background:C.wa,display:"flex",alignItems:"center",justifyContent:"center"}}><WA_ICON/></div>
-          <div>
-            <h2 style={{fontSize:18,fontWeight:700,color:C.text,margin:0}}>Send {isEvening?"Evening":"Morning"} Brief</h2>
-            <p style={{fontSize:13,color:C.muted,margin:0}}>Opens WhatsApp with your brief pre-filled</p>
-          </div>
-        </div>
-        <button onClick={()=>setPreview(!preview)} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,background:preview?C.bg:C.card,cursor:"pointer",textAlign:"left",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.text}}>{preview?"Hide":"Preview"} message</span>
-          <span style={{fontSize:14,color:C.muted}}>{preview?"▲":"▼"}</span>
-        </button>
-        {preview&&<div style={{background:"#DCF8C6",borderRadius:14,padding:"14px 16px",marginBottom:16,maxHeight:240,overflowY:"auto",border:"1px solid #C5E8A5"}}><pre style={{fontSize:11,color:"#1a1a1a",margin:0,whiteSpace:"pre-wrap",fontFamily:"-apple-system,sans-serif",lineHeight:1.6}}>{brief}</pre></div>}
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:12,fontWeight:600,color:C.muted,display:"block",marginBottom:6}}>Phone number (optional)</label>
-          <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="e.g. 919876543210" style={{width:"100%",padding:"12px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,color:C.text,background:C.bg,outline:"none",boxSizing:"border-box"}}/>
-        </div>
-        <button onClick={()=>send(phone)} style={{width:"100%",padding:"15px",borderRadius:14,border:"none",cursor:"pointer",background:C.wa,color:"#fff",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"transform .12s"}}
-        onMouseDown={e=>e.currentTarget.style.transform="scale(0.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-        ><WA_ICON/>{sent?"Sent — Tap again":"Send to WhatsApp"}</button>
-        <button onClick={()=>{navigator.clipboard?.writeText(brief);setSent(true);}} style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.card,cursor:"pointer",marginTop:8,fontSize:14,fontWeight:600,color:C.muted}}>Copy to clipboard</button>
-        <button onClick={onClose} style={{width:"100%",marginTop:8,padding:"12px",borderRadius:12,background:"transparent",border:"none",fontSize:14,fontWeight:600,color:C.muted,cursor:"pointer"}}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
 // ════════════════════════════════════════════════════════════
 // MAIN APP
 // ════════════════════════════════════════════════════════════
@@ -345,7 +275,6 @@ export default function MorningBrief(){
   const [tab,setTab]=useState(saved?.tab||"home");
   const [focusChecked,setFocusChecked]=useState(saved?.focusChecked||{});
   const [sheet,setSheet]=useState(null);
-  const [waModal,setWaModal]=useState(false);
   const [now,setNow]=useState(new Date());
 
   const [lastRefresh,setLastRefresh]=useState(now);
@@ -465,13 +394,6 @@ export default function MorningBrief(){
 
           {/* Voice */}
           <VoicePlayer emails={activeEmails} isEvening={isEvening}/>
-
-          {/* WhatsApp */}
-          <div style={{marginTop:12}}>
-            <button onClick={()=>setWaModal(true)} style={{width:"100%",padding:"14px 20px",borderRadius:14,border:"none",cursor:"pointer",background:C.wa,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 4px 14px rgba(37,211,102,0.25)",transition:"transform .12s"}}
-            onMouseDown={e=>e.currentTarget.style.transform="scale(0.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-            ><WA_ICON/><span style={{fontSize:15,fontWeight:700}}>Send {isEvening?"Evening":"Morning"} Brief to WhatsApp</span></button>
-          </div>
 
           {/* Calendar / Tomorrow */}
           <Section icon="📅" title={isEvening?"Tomorrow":"Today's Calendar"} count={calEvents.length} color={accent} live/>
@@ -622,7 +544,6 @@ export default function MorningBrief(){
       </div>
 
       {sheet&&<Sheet item={sheet.item} type={sheet.type} onClose={()=>setSheet(null)}/>}
-      {waModal&&<WhatsAppModal onClose={()=>setWaModal(false)} emails={activeEmails} isEvening={isEvening}/>}
     </div>
   );
 }
