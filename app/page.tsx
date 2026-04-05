@@ -21,7 +21,8 @@ const C = {
 };
 
 // ════════════════════════════════════════════════════════════
-// MOCK DATA
+// DATA — fetched from /api/data when Google creds are configured,
+//         falls back to snapshot from your real Gmail + Calendar
 // ════════════════════════════════════════════════════════════
 const QUOTES = [
   {t:"Focus is not about saying yes. It's about saying no.",a:"Steve Jobs"},
@@ -45,36 +46,37 @@ const EVE_QUOTES = [
 const todayQuote = QUOTES[new Date().getDate()%QUOTES.length];
 const eveQuote = EVE_QUOTES[new Date().getDate()%EVE_QUOTES.length];
 
-const INITIAL_EMAILS = [
-  {id:"e1",from:"Erin Northern (Fazer Agency)",subject:"Peak XV x Fazer Weekly Status Report — 4/3",tag:"ACTION"},
-  {id:"e2",from:"Mayur Gole (Verve Media)",subject:"Re: Peak XV & Verve Media — Mar'26 Invoice",tag:"CC'd"},
-  {id:"e3",from:"Nikita Puri via Google Sheets",subject:"Surge Immersion 2026 Content Roll Out",tag:"SHARED DOC"},
-  {id:"e4",from:"Shruthi Krishnan",subject:"Re: ClickHouse logo file",tag:"FYI"},
-  {id:"e5",from:"Nikita Puri via Notion",subject:"Updates in Peak XV workspace",tag:"UPDATE"},
+// Fallback data — snapshot from your real accounts
+const FALLBACK_EMAILS: any[] = [];
+
+const FALLBACK_CAL_TODAY = [
+  {id:"c-excursion",time:"All day",end:"",title:"Monthly Excursion",note:"All-day event · 2 attendees"},
+  {id:"c-virtues",time:"8:00 PM",end:"8:15 PM",title:"Write the three virtues",note:""},
+  {id:"c-goals",time:"10:45 PM",end:"11:00 PM",title:"set goals for next day 🎯",note:"Recurring daily"},
 ];
 
-const CAL_TODAY = [
-  {id:"c1",time:"9:00 AM",end:"9:30 AM",title:"Check in with people",note:"Recurring daily",prep:["Review yesterday's follow-up list","Check team Slack channels"]},
-  {id:"c2",time:"10:45 PM",end:"11:00 PM",title:"Set goals for next day",note:"Recurring daily",prep:["Review what got done today","Identify top 3 priorities for tomorrow"]},
+const FALLBACK_CAL_TOMORROW = [
+  {id:"ct-pilates",time:"6:15 AM",end:"8:15 AM",title:"Pilates 🏋️‍♀️",note:""},
+  {id:"ct-happay",time:"10:00 AM",end:"10:15 AM",title:"🚨 Check Happay/ Ensure all bills are updated",note:"2 attendees"},
+  {id:"ct-focus",time:"10:00 AM",end:"12:00 PM",title:"Focus time - PLS don't book unless urgent 🙏",note:"Focus time"},
+  {id:"ct-standup",time:"12:00 PM",end:"1:00 PM",title:"Marketing Standup ✨",note:"Del-3-Aryabhatt (5) · 9 attendees"},
+  {id:"ct-lunch",time:"1:30 PM",end:"2:00 PM",title:"lunch 🥗",note:""},
+  {id:"ct-dna",time:"3:00 PM",end:"3:30 PM",title:"Founder's DNA Discussion",note:"SGP-26-Dhoni (4) · 6 attendees"},
+  {id:"ct-neha",time:"3:45 PM",end:"4:05 PM",title:"{Zoom} 1:1 Weekly Catch Up: Harshita <> Neha",note:"Del-3-Aryabhatt (5) · 3 attendees"},
+  {id:"ct-goals2",time:"10:45 PM",end:"11:00 PM",title:"set goals for next day 🎯",note:"Recurring daily"},
 ];
 
-const CAL_TOMORROW = [
-  {id:"ct1",time:"All day",end:"",title:"Monthly Excursion",note:"All-day event · 2 attendees",prep:["Confirm plans with co-attendee","Pack essentials"]},
-  {id:"ct2",time:"10:45 PM",end:"11:00 PM",title:"Set goals for next day 🎯",note:"Recurring daily",prep:["Reflect on the excursion","Plan Monday priorities"]},
+const FALLBACK_NOISE = [
+  "4× Mimecast spam hold notifications",
+  "3× Surge contact form submissions",
+  "1× Google Calendar daily digest",
+  "1× Apple Account password reset",
 ];
 
 const ACTION_ITEMS = [
   {id:"a1",title:"Review & sign off Fazer status report",tag:"TODAY",detail:"Website launching May 29 (World Everest Day). Erin needs your approval on the weekly status report."},
   {id:"a2",title:"Confirm Verve Media invoice tracker",tag:"THIS WEEK",detail:"Mayur updated March invoice numbers. Verify they match your records and confirm to Vasiqa."},
   {id:"a3",title:"Review Surge Immersion Content Roll Out sheet",tag:"THIS WEEK",detail:"Nikita shared the content planning spreadsheet. Check assignments and timeline."},
-];
-
-const NOISE = [
-  "3× Mimecast spam hold notifications",
-  "3× Surge contact form submissions",
-  "1× SBI Corporate Card statement",
-  "1× Google Calendar daily digest",
-  "1× CapitalCorn cold outreach",
 ];
 
 const FOLLOW_UPS = [
@@ -108,7 +110,7 @@ function generateWhatsAppBrief(emails: any, isEvening: boolean) {
     m+=`\n🔁 *FOLLOW-UPS OUTSTANDING*\n`;
     FOLLOW_UPS.forEach(f=>{m+=`• ${f.name} — ${f.task} (${f.days}d)\n`;});
     m+=`\n📅 *TOMORROW*\n`;
-    CAL_TOMORROW.forEach(e=>{m+=`• ${e.time} — ${e.title}\n`;});
+    FALLBACK_CAL_TOMORROW.forEach(e=>{m+=`• ${e.time} — ${e.title}\n`;});
     m+=`\n✉️ *UNREAD PRIORITY* (${emails.length})\n`;
     emails.forEach(e=>{m+=`• [${e.tag}] ${e.from} — ${e.subject}\n`;});
     m+=`\n🧘 *WIND DOWN*\nReview what got done. Set tomorrow's top 3.\n\n`;
@@ -116,8 +118,8 @@ function generateWhatsAppBrief(emails: any, isEvening: boolean) {
     return m;
   }
   let m=`☀️ *MORNING BRIEF*\n${ds}\n\n`;
-  m+=`📅 *CALENDAR* (${CAL_TODAY.length})\n`;
-  CAL_TODAY.forEach(e=>{m+=`• ${e.time} — ${e.title}\n`;});
+  m+=`📅 *CALENDAR* (${FALLBACK_CAL_TODAY.length})\n`;
+  FALLBACK_CAL_TODAY.forEach(e=>{m+=`• ${e.time} — ${e.title}\n`;});
   m+=`\n✉️ *PRIORITY EMAILS* (${emails.length})\n`;
   emails.forEach(e=>{m+=`• [${e.tag}] ${e.from} — ${e.subject}\n`;});
   m+=`\n🔴 *ACTION ITEMS*\n`;
@@ -146,8 +148,8 @@ function generateVoiceBrief(emails,isEvening) {
   }
   return [
     `Good morning, Harshita. Let's get you set up for the day.`,
-    `You've got ${emails.length} priority emails waiting, ${CAL_TODAY.length} things on your calendar, and ${ACTION_ITEMS.length} action items to work through.`,
-    CAL_TODAY.length<=2?`Your calendar is pretty light today — this is a great window for deep, focused work.`:`It's a busier day with ${CAL_TODAY.length} meetings, so plan your focus time around them.`,
+    `You've got ${emails.length} priority emails waiting, ${FALLBACK_CAL_TODAY.length} things on your calendar, and ${ACTION_ITEMS.length} action items to work through.`,
+    FALLBACK_CAL_TODAY.length<=2?`Your calendar is pretty light today — this is a great window for deep, focused work.`:`It's a busier day with ${FALLBACK_CAL_TODAY.length} meetings, so plan your focus time around them.`,
     `The most urgent thing on your plate? ${ACTION_ITEMS[0].title}. I'd tackle that first.`,
     FOLLOW_UPS.length>0?`Quick heads up — you have ${FOLLOW_UPS.length} follow-ups waiting on other people. The longest outstanding is ${FOLLOW_UPS.reduce((a,b)=>a.days>b.days?a:b).name}, now ${FOLLOW_UPS.reduce((a,b)=>a.days>b.days?a:b).days} days.`:``,
     `For your focus block, I'd suggest working on the content strategy — specifically drafting that first Company Zero-to-Two essay outline.`,
@@ -342,15 +344,35 @@ export default function MorningBrief(){
 
   const [lastRefresh,setLastRefresh]=useState(now);
   const [refreshing,setRefreshing]=useState(false);
+  const [isLive,setIsLive]=useState(false);
+
+  // Live data state — starts with fallback, replaced by API data when available
+  const [liveEmails,setLiveEmails]=useState(FALLBACK_EMAILS);
+  const [liveCalToday,setLiveCalToday]=useState(FALLBACK_CAL_TODAY);
+  const [liveCalTomorrow,setLiveCalTomorrow]=useState(FALLBACK_CAL_TOMORROW);
+
+  const fetchData=useCallback(async()=>{
+    try{
+      const res=await fetch("/api/data",{cache:"no-store"});
+      const d=await res.json();
+      if(d.live){
+        setLiveEmails(d.emails||[]);
+        if(d.calToday?.length>0) setLiveCalToday(d.calToday);
+        if(d.calTomorrow?.length>0) setLiveCalTomorrow(d.calTomorrow);
+        setIsLive(true);
+      }
+    }catch{}
+  },[]);
 
   const doRefresh=useCallback(()=>{
     setRefreshing(true);
     setNow(new Date());
     setLastRefresh(new Date());
-    // Simulate fetch delay for visual feedback
-    setTimeout(()=>setRefreshing(false),600);
-  },[]);
+    fetchData().finally(()=>setTimeout(()=>setRefreshing(false),400));
+  },[fetchData]);
 
+  // Fetch on mount
+  useEffect(()=>{fetchData();},[fetchData]);
   // Auto-refresh every 60 seconds
   useEffect(()=>{const iv=setInterval(()=>doRefresh(),60000);return()=>clearInterval(iv);},[doRefresh]);
   // Refresh when tab becomes visible again
@@ -361,12 +383,12 @@ export default function MorningBrief(){
   const isEvening=hr>=17;
   const timeStr=now.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true});
   const dateStr=now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  const activeEmails=INITIAL_EMAILS.filter(e=>!dismissed.includes(e.id));
+  const activeEmails=liveEmails.filter(e=>!dismissed.includes(e.id));
   const dismissEmail=useCallback(id=>{setDismissed(p=>[...p,id]);},[]);
   const handleAction=useCallback((email,action)=>{if(action==="reply")setSheet({item:email,type:"reply"});else if(action==="done")dismissEmail(email.id);},[dismissEmail]);
   const toggleFocus=useCallback(id=>{setFocusChecked(p=>({...p,[id]:!p[id]}));},[]);
 
-  const calEvents=isEvening?CAL_TOMORROW:CAL_TODAY;
+  const calEvents=isEvening?liveCalTomorrow:liveCalToday;
   const q=isEvening?eveQuote:todayQuote;
   const accent=isEvening?C.eve:C.cal;
   const accentBg=isEvening?C.eveBg:C.calBg;
@@ -385,10 +407,10 @@ export default function MorningBrief(){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 24px 0",color:C.muted,fontSize:12,fontWeight:600}}>
         <span>{timeStr}</span>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button onClick={doRefresh} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:4,color:C.live,fontSize:10,fontWeight:700,transition:"opacity .2s",opacity:refreshing?0.5:1}}>
+          <button onClick={doRefresh} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:4,color:isLive?C.live:C.later,fontSize:10,fontWeight:700,transition:"opacity .2s",opacity:refreshing?0.5:1}}>
             <span style={{display:"inline-block",transition:"transform .6s",transform:refreshing?"rotate(360deg)":"rotate(0deg)"}}>↻</span>
-            <LiveDot/>
-            <span>Gmail + Calendar</span>
+            {isLive?<LiveDot/>:<span style={{display:"inline-block",width:6,height:6,borderRadius:3,background:C.later}}/>}
+            <span>{isLive?"Gmail + Calendar":"Offline · tap to sync"}</span>
           </button>
         </div>
       </div>
@@ -416,10 +438,10 @@ export default function MorningBrief(){
                 {num:activeEmails.length,label:"emails still unread",icon:"✉️",color:C.email,bg:C.emailBg},
                 {num:ACTION_ITEMS.length,label:"actions still open",icon:"🔴",color:C.urgent,bg:C.urgentBg},
                 {num:FOLLOW_UPS.length,label:"follow-ups pending",icon:"🔁",color:C.later,bg:C.laterBg},
-                {num:CAL_TOMORROW.length,label:"events tomorrow",icon:"📅",color:C.eve,bg:C.eveBg},
+                {num:liveCalTomorrow.length,label:"events tomorrow",icon:"📅",color:C.eve,bg:C.eveBg},
               ]:[
                 {num:activeEmails.length,label:"priority emails",icon:"✉️",color:C.email,bg:C.emailBg},
-                {num:CAL_TODAY.length,label:"meetings today",icon:"📅",color:C.cal,bg:C.calBg},
+                {num:liveCalToday.length,label:"meetings today",icon:"📅",color:C.cal,bg:C.calBg},
                 {num:ACTION_ITEMS.length,label:"action items",icon:"🔴",color:C.urgent,bg:C.urgentBg},
                 {num:FOLLOW_UPS.length,label:"follow-ups",icon:"🔁",color:C.later,bg:C.laterBg},
               ]).map((s,i)=>(
@@ -491,9 +513,9 @@ export default function MorningBrief(){
           ))}
 
           {/* Filtered */}
-          <Section icon="🔇" title="Filtered Out" count={NOISE.length} color={C.light}/>
+          <Section icon="🔇" title="Filtered Out" count={FALLBACK_NOISE.length} color={C.light}/>
           <div style={{background:C.card,borderRadius:16,padding:"12px 16px",boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`}}>
-            {NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
+            {FALLBACK_NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
           </div>
         </>}
 
@@ -523,9 +545,9 @@ export default function MorningBrief(){
             </div>
           ))}
 
-          <Section icon="🔇" title="Filtered Noise" count={NOISE.length} color={C.light}/>
+          <Section icon="🔇" title="Filtered Noise" count={FALLBACK_NOISE.length} color={C.light}/>
           <div style={{background:C.card,borderRadius:16,padding:"12px 16px",boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`}}>
-            {NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
+            {FALLBACK_NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
           </div>
         </>}
 
