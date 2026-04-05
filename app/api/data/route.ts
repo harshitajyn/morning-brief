@@ -4,17 +4,17 @@ import { NextResponse } from "next/server";
 // Force dynamic — never cache
 export const dynamic = "force-dynamic";
 
-function getAuth() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+function getAuth(prefix: string) {
+  const clientId = process.env[`${prefix}_CLIENT_ID`] || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env[`${prefix}_CLIENT_SECRET`] || process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env[`${prefix}_REFRESH_TOKEN`];
   if (!clientId || !clientSecret || !refreshToken) return null;
   const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
   oauth2.setCredentials({ refresh_token: refreshToken });
   return oauth2;
 }
 
-async function fetchEmails(auth: any) {
+async function fetchEmails(auth: any, account: string) {
   const gmail = google.gmail({ version: "v1", auth });
   const res = await gmail.users.messages.list({
     userId: "me",
@@ -47,12 +47,13 @@ async function fetchEmails(auth: any) {
     else if (labels.includes("CATEGORY_UPDATES")) tag = "UPDATE";
 
     emails.push({
-      id: m.id,
+      id: `${account}-${m.id}`,
       from: get("From").replace(/<.*>/, "").trim(),
       subject: get("Subject"),
       tag,
       unread: isUnread,
       date: get("Date"),
+      account,
     });
   }
   return emails;
@@ -104,26 +105,46 @@ async function fetchCalendar(auth: any) {
 }
 
 export async function GET() {
-  const auth = getAuth();
-  if (!auth) {
-    // Return empty data when no credentials configured
+  // Work account: GOOGLE_REFRESH_TOKEN
+  // Personal account: GOOGLE_PERSONAL_REFRESH_TOKEN
+  const workAuth = getAuth("GOOGLE");
+  const personalAuth = getAuth("GOOGLE_PERSONAL");
+
+  if (!workAuth && !personalAuth) {
     return NextResponse.json({
       emails: [],
       calToday: [],
       calTomorrow: [],
       live: false,
-      error: "Google API credentials not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REFRESH_TOKEN in .env.local",
+      error: "No Google credentials configured. Set GOOGLE_REFRESH_TOKEN (work) and/or GOOGLE_PERSONAL_REFRESH_TOKEN (personal) in .env.local",
       ts: Date.now(),
     });
   }
 
   try {
-    const [emails, calendar] = await Promise.all([
-      fetchEmails(auth),
-      fetchCalendar(auth),
-    ]);
+    const fetches: Promise<any>[] = [];
+
+    // Fetch emails from both accounts in parallel
+    if (workAuth) fetches.push(fetchEmails(workAuth, "work"));
+    else fetches.push(Promise.resolve([]));
+
+    if (personalAuth) fetches.push(fetchEmails(personalAuth, "personal"));
+    else fetches.push(Promise.resolve([]));
+
+    // Calendar from work account (primary), personal as secondary
+    if (workAuth) fetches.push(fetchCalendar(workAuth));
+    else if (personalAuth) fetches.push(fetchCalendar(personalAuth));
+    else fetches.push(Promise.resolve({ today: [], tomorrow: [] }));
+
+    const [workEmails, personalEmails, calendar] = await Promise.all(fetches);
+
+    // Merge and sort emails by date (newest first)
+    const allEmails = [...workEmails, ...personalEmails].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
     return NextResponse.json({
-      emails,
+      emails: allEmails,
       calToday: calendar.today,
       calTomorrow: calendar.tomorrow,
       live: true,

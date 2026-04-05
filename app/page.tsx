@@ -208,6 +208,7 @@ function SwipeableEmail({email,onDismiss,onAction}){
         onTouchStart={e=>onS(e.touches[0].clientX)} onTouchMove={e=>onM(e.touches[0].clientX)} onTouchEnd={onE}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
           <Badge text={email.tag} color={C.email} bg={C.emailBg}/>
+          {email.account==="personal"&&<Badge text="PERSONAL" color={C.focus} bg={C.focusBg}/>}
           <span style={{fontSize:10,color:C.light,marginLeft:"auto"}}>← swipe</span>
         </div>
         <p style={{fontSize:13,fontWeight:700,color:C.text,margin:"4px 0 2px"}}>{email.from}</p>
