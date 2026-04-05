@@ -1,0 +1,31 @@
+{
+  "emails": [
+    {"id":"e-19d5c224","from":"Surge (donotreply@wpvip.com)","subject":"Surge - Contact Us (Dr Rashmi MR)","tag":"UPDATE","account":"work","unread":true,"date":"2026-04-05T05:32:30Z"},
+    {"id":"e-19d5c0f3","from":"Helpdesk Peak XV","subject":"Mimecast: Potential Spam on hold for harshita@peakxv.com","tag":"FYI","account":"work","unread":true,"date":"2026-04-05T05:13:12Z"},
+    {"id":"e-19d5afa1","from":"Helpdesk Peak XV","subject":"Mimecast: Potential Spam on hold for harshita@peakxv.com","tag":"FYI","account":"work","unread":true,"date":"2026-04-05T00:10:30Z"},
+    {"id":"e-19d58de5","from":"Apple","subject":"Your Apple Account password has been reset","tag":"FYI","account":"work","unread":true,"date":"2026-04-04T14:20:42Z"}
+  ],
+  "calToday": [
+    {"id":"c-excursion","time":"All day","end":"","title":"Monthly Excursion","note":"2 attendees"},
+    {"id":"c-virtues","time":"8:00 PM","end":"8:15 PM","title":"Write the three virtues","note":""},
+    {"id":"c-goals","time":"10:45 PM","end":"11:00 PM","title":"set goals for next day 🎯","note":"Recurring daily"}
+  ],
+  "calTomorrow": [
+    {"id":"ct-pilates","time":"6:15 AM","end":"8:15 AM","title":"Pilates 🏋️‍♀️","note":""},
+    {"id":"ct-happay","time":"10:00 AM","end":"10:15 AM","title":"🚨 Check Happay/ Ensure all bills are updated","note":"2 attendees"},
+    {"id":"ct-focus","time":"10:00 AM","end":"12:00 PM","title":"Focus time - PLS don't book unless urgent 🙏","note":"Focus time"},
+    {"id":"ct-standup","time":"12:00 PM","end":"1:00 PM","title":"Marketing Standup ✨","note":"Del-3-Aryabhatt (5) · 9 attendees"},
+    {"id":"ct-lunch","time":"1:30 PM","end":"2:00 PM","title":"lunch 🥗","note":""},
+    {"id":"ct-dna","time":"3:00 PM","end":"3:30 PM","title":"Founder's DNA Discussion","note":"SGP-26-Dhoni (4) · 6 attendees"},
+    {"id":"ct-neha","time":"3:45 PM","end":"4:05 PM","title":"{Zoom} 1:1 Weekly Catch Up: Harshita <> Neha","note":"Del-3-Aryabhatt (5) · 3 attendees"},
+    {"id":"ct-goals2","time":"10:45 PM","end":"11:00 PM","title":"set goals for next day 🎯","note":"Recurring daily"}
+  ],
+  "noise": [
+    "4× Mimecast spam hold notifications",
+    "3× Surge contact form submissions",
+    "1× Google Calendar daily digest",
+    "1× Apple Account password reset"
+  ],
+  "live": true,
+  "ts": 1775370000000
+}

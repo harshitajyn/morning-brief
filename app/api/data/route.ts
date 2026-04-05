@@ -1,8 +1,17 @@
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 // Force dynamic — never cache
 export const dynamic = "force-dynamic";
+
+function loadLocalData() {
+  try {
+    const raw = readFileSync(join(process.cwd(), "data", "live.json"), "utf-8");
+    return JSON.parse(raw);
+  } catch { return null; }
+}
 
 function getAuth(prefix: string) {
   const clientId = process.env[`${prefix}_CLIENT_ID`] || process.env.GOOGLE_CLIENT_ID;
@@ -111,12 +120,16 @@ export async function GET() {
   const personalAuth = getAuth("GOOGLE_PERSONAL");
 
   if (!workAuth && !personalAuth) {
+    // No API creds — serve from local data file if available
+    const local = loadLocalData();
+    if (local) return NextResponse.json({ ...local, ts: Date.now() });
+
     return NextResponse.json({
       emails: [],
       calToday: [],
       calTomorrow: [],
       live: false,
-      error: "No Google credentials configured. Set GOOGLE_REFRESH_TOKEN (work) and/or GOOGLE_PERSONAL_REFRESH_TOKEN (personal) in .env.local",
+      error: "No Google credentials configured.",
       ts: Date.now(),
     });
   }
@@ -151,6 +164,10 @@ export async function GET() {
       ts: Date.now(),
     });
   } catch (err: any) {
+    // Google API unreachable — fall back to local data file
+    const local = loadLocalData();
+    if (local) return NextResponse.json({ ...local, ts: Date.now() });
+
     return NextResponse.json({
       emails: [],
       calToday: [],

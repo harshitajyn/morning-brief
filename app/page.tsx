@@ -47,7 +47,12 @@ const todayQuote = QUOTES[new Date().getDate()%QUOTES.length];
 const eveQuote = EVE_QUOTES[new Date().getDate()%EVE_QUOTES.length];
 
 // Fallback data — snapshot from your real accounts
-const FALLBACK_EMAILS: any[] = [];
+const FALLBACK_EMAILS = [
+  {id:"e-19d5c224",from:"Surge (donotreply@wpvip.com)",subject:"Surge - Contact Us (Dr Rashmi MR)",tag:"UPDATE",account:"work",unread:true},
+  {id:"e-19d5c0f3",from:"Helpdesk Peak XV",subject:"Mimecast: Potential Spam on hold for harshita@peakxv.com",tag:"FYI",account:"work",unread:true},
+  {id:"e-19d5afa1",from:"Helpdesk Peak XV",subject:"Mimecast: Potential Spam on hold for harshita@peakxv.com",tag:"FYI",account:"work",unread:true},
+  {id:"e-19d58de5",from:"Apple",subject:"Your Apple Account password has been reset",tag:"FYI",account:"work",unread:true},
+];
 
 const FALLBACK_CAL_TODAY = [
   {id:"c-excursion",time:"All day",end:"",title:"Monthly Excursion",note:"All-day event · 2 attendees"},
