@@ -340,7 +340,21 @@ export default function MorningBrief(){
   const [waModal,setWaModal]=useState(false);
   const [now,setNow]=useState(new Date());
 
-  useEffect(()=>{const iv=setInterval(()=>setNow(new Date()),30000);return()=>clearInterval(iv);},[]);
+  const [lastRefresh,setLastRefresh]=useState(now);
+  const [refreshing,setRefreshing]=useState(false);
+
+  const doRefresh=useCallback(()=>{
+    setRefreshing(true);
+    setNow(new Date());
+    setLastRefresh(new Date());
+    // Simulate fetch delay for visual feedback
+    setTimeout(()=>setRefreshing(false),600);
+  },[]);
+
+  // Auto-refresh every 60 seconds
+  useEffect(()=>{const iv=setInterval(()=>doRefresh(),60000);return()=>clearInterval(iv);},[doRefresh]);
+  // Refresh when tab becomes visible again
+  useEffect(()=>{const handler=()=>{if(document.visibilityState==="visible")doRefresh();};document.addEventListener("visibilitychange",handler);return()=>document.removeEventListener("visibilitychange",handler);},[doRefresh]);
   useEffect(()=>{save({dismissed,tab,focusChecked});},[dismissed,tab,focusChecked]);
 
   const hr=now.getHours();
@@ -370,7 +384,17 @@ export default function MorningBrief(){
       {/* Status Bar */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 24px 0",color:C.muted,fontSize:12,fontWeight:600}}>
         <span>{timeStr}</span>
-        <div style={{display:"flex",gap:4,alignItems:"center"}}><LiveDot/><span style={{fontSize:10,color:C.live,marginLeft:4}}>Gmail + Calendar</span></div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <button onClick={doRefresh} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:4,color:C.live,fontSize:10,fontWeight:700,transition:"opacity .2s",opacity:refreshing?0.5:1}}>
+            <span style={{display:"inline-block",transition:"transform .6s",transform:refreshing?"rotate(360deg)":"rotate(0deg)"}}>↻</span>
+            <LiveDot/>
+            <span>Gmail + Calendar</span>
+          </button>
+        </div>
+      </div>
+      {/* Last updated */}
+      <div style={{padding:"2px 24px 0",textAlign:"right"}}>
+        <span style={{fontSize:9,color:C.light}}>Updated {lastRefresh.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true}).toLowerCase()}{refreshing?" · refreshing…":""}</span>
       </div>
 
       {/* Header */}
@@ -443,21 +467,8 @@ export default function MorningBrief(){
             activeEmails.map(e=><SwipeableEmail key={e.id} email={e} onDismiss={dismissEmail} onAction={handleAction}/>)
           )}
 
-          {/* Follow-ups */}
-          <Section icon="🔁" title="Follow-ups Pending" count={FOLLOW_UPS.length} color={C.later}/>
-          {FOLLOW_UPS.map(f=>(
-            <div key={f.id} onClick={()=>setSheet({item:f,type:"follow"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer",transition:"transform .12s"}}
-            onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1}}><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{f.task}</p>
-                  <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center"}}><span style={{fontSize:12,color:C.muted}}>{f.name}</span><Badge text={`${f.days}d`} color={f.days>=4?C.urgent:C.later} bg={f.days>=4?C.urgentBg:C.laterBg}/><Badge text={f.status} color={C.muted} bg={C.border}/></div>
-                </div><span style={{color:C.light}}>›</span>
-              </div>
-            </div>
-          ))}
-
-          {/* Actions */}
-          <Section icon={<CHECK_ICON/>} title={isEvening?"Still Pending":"Action Items"} count={ACTION_ITEMS.length} color={isEvening?C.urgent:C.urgent}/>
+          {/* Pending Items (Actions + Follow-ups consolidated) */}
+          <Section icon={<CHECK_ICON/>} title={isEvening?"Still Pending":"Pending Items"} count={ACTION_ITEMS.length+FOLLOW_UPS.length} color={C.urgent}/>
           {ACTION_ITEMS.map(a=>(
             <div key={a.id} onClick={()=>setSheet({item:a,type:"urgent"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer",transition:"transform .12s"}}
             onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
@@ -465,6 +476,16 @@ export default function MorningBrief(){
                 <Badge text={a.tag} color={C.urgent} bg={C.urgentBg}/>
                 <p style={{fontSize:14,fontWeight:600,color:C.text,margin:0,flex:1}}>{a.title}</p>
                 <span style={{color:C.light}}>›</span>
+              </div>
+            </div>
+          ))}
+          {FOLLOW_UPS.map(f=>(
+            <div key={f.id} onClick={()=>setSheet({item:f,type:"follow"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer",transition:"transform .12s"}}
+            onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{flex:1}}><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{f.task}</p>
+                  <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center"}}><span style={{fontSize:12,color:C.muted}}>{f.name}</span><Badge text={`${f.days}d`} color={f.days>=4?C.urgent:C.later} bg={f.days>=4?C.urgentBg:C.laterBg}/><Badge text={f.status} color={C.muted} bg={C.border}/></div>
+                </div><span style={{color:C.light}}>›</span>
               </div>
             </div>
           ))}
@@ -482,6 +503,26 @@ export default function MorningBrief(){
           <p style={{fontSize:12,color:C.muted,marginBottom:12}}>Swipe left to remove. Tap Reply, Later, or Done.</p>
           {activeEmails.length===0?<div style={{background:C.emailBg,borderRadius:12,padding:14,textAlign:"center"}}><p style={{fontSize:13,color:C.email,fontWeight:600,margin:0}}>All clear</p></div>
           :activeEmails.map(e=><SwipeableEmail key={e.id} email={e} onDismiss={dismissEmail} onAction={handleAction}/>)}
+
+          {/* Pending Items */}
+          <Section icon={<CHECK_ICON/>} title="Pending" count={ACTION_ITEMS.length+FOLLOW_UPS.length} color={C.urgent}/>
+          {ACTION_ITEMS.map(a=>(
+            <div key={a.id} onClick={()=>setSheet({item:a,type:"urgent"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg}/>
+                <p style={{fontSize:14,fontWeight:600,color:C.text,margin:0,flex:1}}>{a.title}</p><span style={{color:C.light}}>›</span>
+              </div>
+            </div>
+          ))}
+          {FOLLOW_UPS.map(f=>(
+            <div key={f.id} onClick={()=>setSheet({item:f,type:"follow"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{f.task}</p><div style={{display:"flex",gap:6,marginTop:4}}><span style={{fontSize:12,color:C.muted}}>{f.name}</span><Badge text={`${f.days}d`} color={f.days>=4?C.urgent:C.later} bg={f.days>=4?C.urgentBg:C.laterBg}/></div></div>
+                <span style={{color:C.light}}>›</span>
+              </div>
+            </div>
+          ))}
+
           <Section icon="🔇" title="Filtered Noise" count={NOISE.length} color={C.light}/>
           <div style={{background:C.card,borderRadius:16,padding:"12px 16px",boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`}}>
             {NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
