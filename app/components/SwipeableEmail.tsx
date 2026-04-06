@@ -109,7 +109,7 @@ export function SwipeableEmail({
         <div className="flex gap-1.5">
           <PillButton
             label="Reply"
-            icon="\u21A9"
+            icon="↩"
             color={C.reply}
             bg={C.replyBg}
             onClick={(e) => {
@@ -119,7 +119,7 @@ export function SwipeableEmail({
           />
           <PillButton
             label="Done"
-            icon="\u2713"
+            icon="✓"
             color={C.done}
             bg={C.doneBg}
             onClick={(e) => {

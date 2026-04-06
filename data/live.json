@@ -1,9 +1,6 @@
 {
   "emails": [
-    {"id":"e-19d5c224","from":"Surge (donotreply@wpvip.com)","subject":"Surge - Contact Us (Dr Rashmi MR)","tag":"UPDATE","account":"work","unread":true,"date":"2026-04-05T05:32:30Z"},
-    {"id":"e-19d5c0f3","from":"Helpdesk Peak XV","subject":"Mimecast: Potential Spam on hold for harshita@peakxv.com","tag":"FYI","account":"work","unread":true,"date":"2026-04-05T05:13:12Z"},
-    {"id":"e-personal-urgent","from":"Harshita Jain (harshita@peakxv.com)","subject":"Urgent","tag":"ACTION","account":"personal","unread":true,"date":"2026-04-04T19:54:36Z"},
-    {"id":"e-19d58de5","from":"Apple","subject":"Your Apple Account password has been reset","tag":"FYI","account":"work","unread":true,"date":"2026-04-04T14:20:42Z"}
+    {"id":"e-personal-urgent","from":"Harshita Jain (harshita@peakxv.com)","subject":"Urgent","tag":"ACTION","account":"personal","unread":true,"date":"2026-04-04T19:54:36Z"}
   ],
   "calToday": [
     {"id":"c-excursion","time":"All day","end":"","title":"Monthly Excursion","note":"2 attendees"},
@@ -33,9 +30,9 @@
   ],
   "noise": [
     "4× Mimecast spam hold notifications",
-    "3× Surge contact form submissions",
+    "3× Surge contact form submissions (community@peakxv.com)",
     "1× Google Calendar daily digest",
-    "1× Apple Account password reset"
+    "1× Apple Account password reset notification"
   ],
   "live": true,
   "ts": 1775370000000
