@@ -20,6 +20,17 @@
     {"id":"ct-neha","time":"3:45 PM","end":"4:05 PM","title":"{Zoom} 1:1 Weekly Catch Up: Harshita <> Neha","note":"Del-3-Aryabhatt (5) · 3 attendees"},
     {"id":"ct-goals2","time":"10:45 PM","end":"11:00 PM","title":"set goals for next day 🎯","note":"Recurring daily"}
   ],
+  "actionItems": [
+    {"id":"a1","title":"Review & sign off Fazer status report","tag":"TODAY","detail":"Website launching May 29 (World Everest Day). Erin needs your approval on the weekly status report.","source":"email"},
+    {"id":"a2","title":"Confirm Verve Media invoice tracker","tag":"THIS WEEK","detail":"Mayur updated March invoice numbers. Verify they match your records and confirm to Vasiqa.","source":"email"},
+    {"id":"a3","title":"Review Surge Immersion Content Roll Out sheet","tag":"THIS WEEK","detail":"Nikita shared the content planning spreadsheet. Check assignments and timeline.","source":"email"}
+  ],
+  "followUps": [
+    {"id":"f1","name":"Erin (Fazer)","task":"Website launch sign-off","days":1,"status":"waiting","source":"email"},
+    {"id":"f2","name":"Vasiqa","task":"Verve Media invoice confirmation","days":3,"status":"waiting","source":"email"},
+    {"id":"f3","name":"Nikita Puri","task":"Immersion content sheet review","days":2,"status":"in-progress","source":"email"},
+    {"id":"f4","name":"Shweta Rajpal Kohli","task":"SPF × Surge collaboration next steps","days":5,"status":"waiting","source":"email"}
+  ],
   "noise": [
     "4× Mimecast spam hold notifications",
     "3× Surge contact form submissions",

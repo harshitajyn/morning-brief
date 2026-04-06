@@ -1,35 +1,25 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { C } from "./components/colors";
+import { Badge } from "./components/Badge";
+import { CheckIcon } from "./components/CheckIcon";
+import { LiveDot } from "./components/LiveDot";
+import { Section } from "./components/Section";
+import { SwipeableEmail } from "./components/SwipeableEmail";
+import { VoicePlayer } from "./components/VoicePlayer";
+import { Sheet } from "./components/Sheet";
+import { LoadingSkeleton } from "./components/LoadingSkeleton";
 
-// ════════════════════════════════════════════════════════════
-// CONSTANTS
-// ════════════════════════════════════════════════════════════
-const C = {
-  bg:"#F7F5F0",card:"#FFFFFF",text:"#2D2D2D",muted:"#8A8A8A",light:"#B0A89A",
-  border:"#EDE9E2",shadow:"rgba(0,0,0,0.04)",
-  urgent:"#E07A5F",urgentBg:"#FDF0EC",
-  cal:"#5B8A72",calBg:"#EDF5F0",
-  email:"#6B7FD7",emailBg:"#EDEFFE",
-  focus:"#8B7EC8",focusBg:"#F0EDF8",
-  dismiss:"#FF6B6B",dismissBg:"#FFE8E8",
-  done:"#4CAF50",doneBg:"#E8F5E9",
-  later:"#FF9800",laterBg:"#FFF3E0",
-  reply:"#6B7FD7",replyBg:"#EDEFFE",
-  live:"#4CAF50",liveBg:"#E8F5E9",
-  eve:"#6366F1",eveBg:"#EEF2FF",
-};
-
-// ════════════════════════════════════════════════════════════
-// DATA — fetched from /api/data when Google creds are configured,
-//         falls back to snapshot from your real Gmail + Calendar
-// ════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
+// QUOTES
+// ═══════════════════════════════════════
 const QUOTES = [
   {t:"Focus is not about saying yes. It's about saying no.",a:"Steve Jobs"},
   {t:"Deep work is the ability to focus without distraction on a cognitively demanding task.",a:"Cal Newport"},
   {t:"Attention is the rarest and purest form of generosity.",a:"Simone Weil"},
   {t:"Until we can manage time, we can manage nothing else.",a:"Peter Drucker"},
   {t:"The key is not to prioritize what's on your schedule, but to schedule your priorities.",a:"Stephen Covey"},
-  {t:"Concentrate all your thoughts upon the work at hand. The sun's rays do not burn until brought to a focus.",a:"Alexander Graham Bell"},
+  {t:"Concentrate all your thoughts upon the work at hand.",a:"Alexander Graham Bell"},
   {t:"Almost everything will work again if you unplug it for a few minutes, including you.",a:"Anne Lamott"},
   {t:"Time is what we want most, but what we use worst.",a:"William Penn"},
   {t:"Do the hard jobs first. The easy jobs will take care of themselves.",a:"Dale Carnegie"},
@@ -42,508 +32,415 @@ const EVE_QUOTES = [
   {t:"What is done is done. What is not done is a task for tomorrow.",a:"Seneca"},
   {t:"The night is the hardest time to be alive. But morning always comes.",a:"Ernest Hemingway"},
 ];
-const todayQuote = QUOTES[new Date().getDate()%QUOTES.length];
-const eveQuote = EVE_QUOTES[new Date().getDate()%EVE_QUOTES.length];
+const todayQuote = QUOTES[new Date().getDate() % QUOTES.length];
+const eveQuote = EVE_QUOTES[new Date().getDate() % EVE_QUOTES.length];
 
-// Fallback data — snapshot from your real accounts
-const FALLBACK_EMAILS = [
-  {id:"e-19d5c224",from:"Surge (donotreply@wpvip.com)",subject:"Surge - Contact Us (Dr Rashmi MR)",tag:"UPDATE",account:"work",unread:true},
-  {id:"e-19d5c0f3",from:"Helpdesk Peak XV",subject:"Mimecast: Potential Spam on hold for harshita@peakxv.com",tag:"FYI",account:"work",unread:true},
-  {id:"e-personal-urgent",from:"Harshita Jain (harshita@peakxv.com)",subject:"Urgent",tag:"ACTION",account:"personal",unread:true},
-  {id:"e-19d58de5",from:"Apple",subject:"Your Apple Account password has been reset",tag:"FYI",account:"work",unread:true},
-];
-
-const FALLBACK_CAL_TODAY = [
-  {id:"c-excursion",time:"All day",end:"",title:"Monthly Excursion",note:"All-day event · 2 attendees"},
-  {id:"c-virtues",time:"8:00 PM",end:"8:15 PM",title:"Write the three virtues",note:""},
-  {id:"c-goals",time:"10:45 PM",end:"11:00 PM",title:"set goals for next day 🎯",note:"Recurring daily"},
-];
-
-const FALLBACK_CAL_TOMORROW = [
-  {id:"ct-pilates",time:"6:15 AM",end:"8:15 AM",title:"Pilates 🏋️‍♀️",note:""},
-  {id:"ct-happay",time:"10:00 AM",end:"10:15 AM",title:"🚨 Check Happay/ Ensure all bills are updated",note:"2 attendees"},
-  {id:"ct-focus",time:"10:00 AM",end:"12:00 PM",title:"Focus time - PLS don't book unless urgent 🙏",note:"Focus time"},
-  {id:"ct-standup",time:"12:00 PM",end:"1:00 PM",title:"Marketing Standup ✨",note:"Del-3-Aryabhatt (5) · 9 attendees"},
-  {id:"ct-lunch",time:"1:30 PM",end:"2:00 PM",title:"lunch 🥗",note:""},
-  {id:"ct-dna",time:"3:00 PM",end:"3:30 PM",title:"Founder's DNA Discussion",note:"SGP-26-Dhoni (4) · 6 attendees"},
-  {id:"ct-neha",time:"3:45 PM",end:"4:05 PM",title:"{Zoom} 1:1 Weekly Catch Up: Harshita <> Neha",note:"Del-3-Aryabhatt (5) · 3 attendees"},
-  {id:"ct-goals2",time:"10:45 PM",end:"11:00 PM",title:"set goals for next day 🎯",note:"Recurring daily"},
-];
-
-const FALLBACK_NOISE = [
-  "4× Mimecast spam hold notifications",
-  "3× Surge contact form submissions",
-  "1× Google Calendar daily digest",
-  "1× Apple Account password reset",
-];
-
-const ACTION_ITEMS = [
-  {id:"a1",title:"Review & sign off Fazer status report",tag:"TODAY",detail:"Website launching May 29 (World Everest Day). Erin needs your approval on the weekly status report."},
-  {id:"a2",title:"Confirm Verve Media invoice tracker",tag:"THIS WEEK",detail:"Mayur updated March invoice numbers. Verify they match your records and confirm to Vasiqa."},
-  {id:"a3",title:"Review Surge Immersion Content Roll Out sheet",tag:"THIS WEEK",detail:"Nikita shared the content planning spreadsheet. Check assignments and timeline."},
-];
-
-const FOLLOW_UPS = [
-  {id:"f1",name:"Erin (Fazer)",task:"Website launch sign-off",days:1,status:"waiting"},
-  {id:"f2",name:"Vasiqa",task:"Verve Media invoice confirmation",days:3,status:"waiting"},
-  {id:"f3",name:"Nikita Puri",task:"Immersion content sheet review",days:2,status:"in-progress"},
-  {id:"f4",name:"Shweta Rajpal Kohli",task:"SPF × Surge collaboration next steps",days:5,status:"waiting"},
-];
-
-const FOCUS_TASKS = [
-  {id:"ft1",text:"Draft first 'Company Zero-to-Two' essay outline"},
-  {id:"ft2",text:"Finalize 3 LinkedIn post hooks"},
-  {id:"ft3",text:"Define newsletter cadence + distribution plan"},
-];
-
-// ════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // STORAGE
-// ════════════════════════════════════════════════════════════
-const SK="mb_v3";
-const load=()=>{try{return JSON.parse(localStorage?.getItem?.(SK)||"null")}catch{return null}};
-const save=(s: any)=>{try{localStorage?.setItem?.(SK,JSON.stringify(s))}catch{}};
-// ════════════════════════════════════════════════════════════
-// BRIEF GENERATORS
-// ════════════════════════════════════════════════════════════
-function generateVoiceBrief(emails,isEvening) {
-  if(isEvening){
-    const pending=ACTION_ITEMS.length;
-    const oldest=FOLLOW_UPS.reduce((a,b)=>a.days>b.days?a:b);
+// ═══════════════════════════════════════
+const SK = "mb_v4";
+const load = () => { try { return JSON.parse(localStorage?.getItem?.(SK) || "null"); } catch { return null; } };
+const save = (s: any) => { try { localStorage?.setItem?.(SK, JSON.stringify(s)); } catch {} };
+
+// ═══════════════════════════════════════
+// DYNAMIC TEXT HELPERS
+// ═══════════════════════════════════════
+function getDayInsight(calCount: number, isEvening: boolean, dayName: string) {
+  if (isEvening) return "Review pending items before winding down";
+  if (calCount <= 2) return `Light ${dayName} — great day for deep work`;
+  return `${calCount} events today — plan focus time around them`;
+}
+
+function getFocusSubtitle(isEvening: boolean, calCount: number, dayName: string) {
+  if (isEvening) return "Before you close out, check off what you got done:";
+  if (calCount <= 2) return `${dayName} is light. Block 2-3 hours:`;
+  return "Squeeze in focus time between meetings:";
+}
+
+// ═══════════════════════════════════════
+// VOICE BRIEF (fully dynamic)
+// ═══════════════════════════════════════
+function generateVoiceBrief(emails: any[], isEvening: boolean, actionItems: any[], followUps: any[], calToday: any[], calTomorrow: any[]) {
+  if (isEvening) {
+    const oldest = followUps.length > 0 ? followUps.reduce((a: any, b: any) => a.days > b.days ? a : b) : null;
     return [
       `Hey Harshita, let's wrap up your day.`,
-      `You still have ${pending} action items open — the most pressing one is the Fazer status report sign-off.`,
-      `There are ${FOLLOW_UPS.length} follow-ups outstanding. The longest is ${oldest.name} at ${oldest.days} days.`,
-      emails.length>0?`${emails.length} priority emails are still unread.`:`You cleared all your priority emails today — nice work.`,
-      `Looking ahead to tomorrow: you have a Monthly Excursion planned for the full day, so keep that in mind when you set your priorities tonight.`,
+      actionItems.length > 0 ? `You still have ${actionItems.length} action items open — the most pressing one is ${actionItems[0].title}.` : `You cleared all your action items today — nice work.`,
+      followUps.length > 0 && oldest ? `There are ${followUps.length} follow-ups outstanding. The longest is ${oldest.name} at ${oldest.days} days.` : ``,
+      emails.length > 0 ? `${emails.length} priority emails are still unread.` : `You cleared all your priority emails today.`,
+      calTomorrow.length > 0 ? `Looking ahead to tomorrow: you have ${calTomorrow.length} events.` : `Tomorrow looks clear.`,
       `Take a breath. Review what you got done, set your top three for tomorrow, and call it a day.`,
       `${eveQuote.t}. That's from ${eveQuote.a}.`,
       `Good night, Harshita.`,
-    ].join(" ");
+    ].filter(Boolean).join(" ");
   }
+  const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
   return [
-    `Good morning, Harshita. Let's get you set up for the day.`,
-    `You've got ${emails.length} priority emails waiting, ${FALLBACK_CAL_TODAY.length} things on your calendar, and ${ACTION_ITEMS.length} action items to work through.`,
-    FALLBACK_CAL_TODAY.length<=2?`Your calendar is pretty light today — this is a great window for deep, focused work.`:`It's a busier day with ${FALLBACK_CAL_TODAY.length} meetings, so plan your focus time around them.`,
-    `The most urgent thing on your plate? ${ACTION_ITEMS[0].title}. I'd tackle that first.`,
-    FOLLOW_UPS.length>0?`Quick heads up — you have ${FOLLOW_UPS.length} follow-ups waiting on other people. The longest outstanding is ${FOLLOW_UPS.reduce((a,b)=>a.days>b.days?a:b).name}, now ${FOLLOW_UPS.reduce((a,b)=>a.days>b.days?a:b).days} days.`:``,
-    `For your focus block, I'd suggest working on the content strategy — specifically drafting that first Company Zero-to-Two essay outline.`,
+    `Good morning, Harshita. Let's get you set up for ${dayName}.`,
+    `You've got ${emails.length} priority emails waiting, ${calToday.length} things on your calendar, and ${actionItems.length} action items to work through.`,
+    calToday.length <= 2 ? `Your calendar is pretty light today — this is a great window for deep, focused work.` : `It's a busier day with ${calToday.length} events, so plan your focus time around them.`,
+    actionItems.length > 0 ? `The most urgent thing on your plate? ${actionItems[0].title}. I'd tackle that first.` : ``,
+    followUps.length > 0 ? `Quick heads up — you have ${followUps.length} follow-ups waiting on other people.` : ``,
     `One more thing. ${todayQuote.t}. That's ${todayQuote.a}.`,
     `Have a great day.`,
   ].filter(Boolean).join(" ");
 }
 
-// ════════════════════════════════════════════════════════════
-// COMPONENTS
-// ════════════════════════════════════════════════════════════
-const CHECK_ICON = ()=>(
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.done} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-);
-
-function Badge({text,color,bg}){return <span style={{fontSize:10,fontWeight:700,color,background:bg,padding:"2px 8px",borderRadius:6,textTransform:"uppercase",letterSpacing:.5,whiteSpace:"nowrap"}}>{text}</span>}
-function LiveDot(){return <span style={{display:"inline-block",width:6,height:6,borderRadius:3,background:C.live,boxShadow:"0 0 4px #4CAF50"}}/>}
-
-function PillButton({label,icon,color,bg,onClick}){
-  return <button onClick={onClick} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 12px",borderRadius:20,border:`1.5px solid ${color}22`,background:bg,cursor:"pointer",fontSize:11,fontWeight:600,color,transition:"transform .12s"}}
-  onMouseDown={e=>e.currentTarget.style.transform="scale(0.93)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-  >{icon&&<span style={{fontSize:12}}>{icon}</span>}{label}</button>;
-}
-
-function Section({icon,title,count,color,live}){
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,marginTop:24}}>
-      <div style={{width:28,height:28,borderRadius:8,background:color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>{icon}</div>
-      <span style={{fontSize:15,fontWeight:700,color:C.text,letterSpacing:-.3}}>{title}</span>
-      {count!==undefined&&<span style={{fontSize:11,fontWeight:600,color:C.muted,background:C.border,borderRadius:10,padding:"2px 8px"}}>{count}</span>}
-      {live&&<span style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4,fontSize:10,fontWeight:700,color:C.live,background:C.liveBg,padding:"2px 8px",borderRadius:6}}><LiveDot/> LIVE</span>}
-    </div>
-  );
-}
-
-function SwipeableEmail({email,onDismiss,onAction}){
-  const startX=useRef(0);
-  const [offset,setOffset]=useState(0);
-  const [gone,setGone]=useState(false);
-  const [swiping,setSwiping]=useState(false);
-  if(gone) return null;
-  const onS=x=>{startX.current=x;setSwiping(true);};
-  const onM=x=>{if(!swiping)return;const dx=x-startX.current;if(dx<0)setOffset(dx);};
-  const onE=()=>{setSwiping(false);if(offset<-90){setGone(true);setTimeout(()=>onDismiss(email.id),250);}else setOffset(0);};
-  return(
-    <div style={{position:"relative",overflow:"hidden",borderRadius:16,marginBottom:8,opacity:gone?0:1,transition:"opacity .25s"}}>
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:110,background:C.dismiss,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"0 16px 16px 0"}}>
-        <span style={{color:"#fff",fontSize:12,fontWeight:700}}>Remove</span>
-      </div>
-      <div style={{background:C.card,borderRadius:16,padding:"12px 16px",boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,transform:`translateX(${offset}px)`,transition:swiping?"none":"transform .25s cubic-bezier(.2,.8,.3,1)",position:"relative",zIndex:2,userSelect:"none",touchAction:"pan-y"}}
-        onMouseDown={e=>onS(e.clientX)} onMouseMove={e=>{if(swiping)onM(e.clientX)}} onMouseUp={onE} onMouseLeave={()=>{if(swiping)onE()}}
-        onTouchStart={e=>onS(e.touches[0].clientX)} onTouchMove={e=>onM(e.touches[0].clientX)} onTouchEnd={onE}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-          <Badge text={email.tag} color={C.email} bg={C.emailBg}/>
-          {email.account==="personal"&&<Badge text="PERSONAL" color={C.focus} bg={C.focusBg}/>}
-          <span style={{fontSize:10,color:C.light,marginLeft:"auto"}}>← swipe</span>
-        </div>
-        <p style={{fontSize:13,fontWeight:700,color:C.text,margin:"4px 0 2px"}}>{email.from}</p>
-        <p style={{fontSize:13,color:C.muted,margin:"0 0 8px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{email.subject}</p>
-        <div style={{display:"flex",gap:6}}>
-          <PillButton label="Reply" icon="↩" color={C.reply} bg={C.replyBg} onClick={e=>{e.stopPropagation();onAction(email,"reply");}}/>
-          <PillButton label="Later" icon="⏰" color={C.later} bg={C.laterBg} onClick={e=>{e.stopPropagation();onAction(email,"later");}}/>
-          <PillButton label="Done" icon="✓" color={C.done} bg={C.doneBg} onClick={e=>{e.stopPropagation();onDismiss(email.id);}}/>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── VOICE PLAYER (compact + sleek) ───
-function VoicePlayer({emails,isEvening}){
-  const [st,setSt]=useState("idle");
-  const play=()=>{const u=new SpeechSynthesisUtterance(generateVoiceBrief(emails,isEvening));u.rate=0.95;u.pitch=1;u.lang="en-US";u.onend=()=>setSt("idle");u.onerror=()=>setSt("idle");window.speechSynthesis.cancel();window.speechSynthesis.speak(u);setSt("playing");};
-  const pause=()=>{window.speechSynthesis.pause();setSt("paused");};
-  const resume=()=>{window.speechSynthesis.resume();setSt("playing");};
-  const stop=()=>{window.speechSynthesis.cancel();setSt("idle");};
-  const accent=isEvening?C.eve:"#1D1D1F";
-  return(
-    <div style={{background:isEvening?"linear-gradient(135deg,#1e1b4b,#312e81)":"linear-gradient(135deg,#1D1D1F,#2D2D3F)",borderRadius:16,padding:"14px 18px",marginTop:16,display:"flex",alignItems:"center",gap:14}}>
-      <div style={{width:38,height:38,borderRadius:10,background:"rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        <span style={{fontSize:17}}>{st==="playing"?"🔊":"🎙"}</span>
-      </div>
-      <div style={{flex:1,minWidth:0}}>
-        <p style={{fontSize:13,fontWeight:700,color:"#fff",margin:0}}>Listen to the summary</p>
-        <p style={{fontSize:11,color:"rgba(255,255,255,.45)",margin:"2px 0 0"}}>{st==="playing"?"Speaking...":st==="paused"?"Paused":"Tap play"}</p>
-      </div>
-      <div style={{display:"flex",gap:6}}>
-        {st==="idle"&&<button onClick={play} style={{width:36,height:36,borderRadius:10,border:"none",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:accent,transition:"transform .12s"}} onMouseDown={e=>e.currentTarget.style.transform="scale(0.9)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>▶</button>}
-        {st==="playing"&&<>
-          <button onClick={pause} style={{width:36,height:36,borderRadius:10,border:"1.5px solid rgba(255,255,255,.25)",background:"transparent",cursor:"pointer",color:"#fff",fontSize:13}}>⏸</button>
-          <button onClick={stop} style={{width:36,height:36,borderRadius:10,border:"1.5px solid rgba(255,255,255,.15)",background:"rgba(255,255,255,.06)",cursor:"pointer",color:"rgba(255,255,255,.6)",fontSize:13}}>⏹</button>
-        </>}
-        {st==="paused"&&<>
-          <button onClick={resume} style={{width:36,height:36,borderRadius:10,border:"none",background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:accent}}>▶</button>
-          <button onClick={stop} style={{width:36,height:36,borderRadius:10,border:"1.5px solid rgba(255,255,255,.15)",background:"rgba(255,255,255,.06)",cursor:"pointer",color:"rgba(255,255,255,.6)",fontSize:13}}>⏹</button>
-        </>}
-      </div>
-    </div>
-  );
-}
-
-// ─── SHEETS ───
-function Sheet({item,type,onClose}){
-  if(!item)return null;
-  const colors={urgent:C.urgent,cal:C.cal,email:C.email,focus:C.focus,follow:C.later,reply:C.reply};
-  const c=colors[type]||C.urgent;
-  return(
-    <div style={{position:"fixed",inset:0,zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end",animation:"fadeIn .2s ease"}} onClick={onClose}>
-      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
-      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.35)",backdropFilter:"blur(6px)"}}/>
-      <div onClick={e=>e.stopPropagation()} style={{position:"relative",background:C.card,borderRadius:"24px 24px 0 0",padding:"12px 24px 40px",maxHeight:"75vh",overflowY:"auto",animation:"slideUp .3s cubic-bezier(.2,.8,.3,1)"}}>
-        <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 16px"}}/>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-          <div style={{width:8,height:8,borderRadius:4,background:c}}/>
-          <span style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:c}}>{type==="cal"?"calendar":type}</span>
-        </div>
-        <h2 style={{fontSize:20,fontWeight:700,color:C.text,margin:"0 0 8px",lineHeight:1.3}}>{item.title||item.subject||item.task||""}</h2>
-        {item.from&&<p style={{fontSize:13,color:C.muted}}>From: <strong style={{color:C.text}}>{item.from}</strong></p>}
-        {item.detail&&<p style={{fontSize:14,color:C.muted,lineHeight:1.7,marginTop:10}}>{item.detail}</p>}
-        {item.note&&<p style={{fontSize:14,color:C.muted,lineHeight:1.7,marginTop:10}}>{item.note}</p>}
-        {item.time&&item.end&&<p style={{fontSize:13,color:c,fontWeight:600,marginTop:6}}>{item.time} – {item.end}</p>}
-        {item.name&&<p style={{fontSize:13,color:C.muted,marginTop:4}}>Contact: <strong style={{color:C.text}}>{item.name}</strong> · {item.days}d waiting</p>}
-        {item.prep&&item.prep.length>0&&(
-          <div style={{marginTop:14,padding:14,background:C.calBg,borderRadius:12}}>
-            <p style={{fontSize:12,fontWeight:700,color:C.cal,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:.5}}>Prep Notes</p>
-            {item.prep.map((p,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"center",padding:"5px 0"}}><div style={{width:16,height:16,borderRadius:4,border:`2px solid ${C.cal}`,flexShrink:0}}/><span style={{fontSize:13,color:C.text}}>{p}</span></div>)}
-          </div>
-        )}
-        {type==="reply"&&(
-          <div style={{marginTop:14,padding:14,background:C.emailBg,borderRadius:12}}>
-            <p style={{fontSize:12,fontWeight:700,color:C.email,margin:"0 0 8px"}}>Draft Reply</p>
-            <p style={{fontSize:13,color:C.text,lineHeight:1.6,fontStyle:"italic"}}>Hi {item.from?.split(" ")[0]}, thanks for this — reviewing now and will get back to you shortly. Best, Harshita</p>
-          </div>
-        )}
-        <button onClick={onClose} style={{width:"100%",marginTop:20,padding:"14px",borderRadius:14,background:c,color:"#fff",border:"none",fontSize:15,fontWeight:600,cursor:"pointer",transition:"transform .12s"}}
-        onMouseDown={e=>e.currentTarget.style.transform="scale(0.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-        >Done</button>
-      </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // MAIN APP
-// ════════════════════════════════════════════════════════════
-export default function MorningBrief(){
-  const saved=load();
-  const [dismissed,setDismissed]=useState(saved?.dismissed||[]);
-  const [tab,setTab]=useState(saved?.tab||"home");
-  const [focusChecked,setFocusChecked]=useState(saved?.focusChecked||{});
-  const [sheet,setSheet]=useState(null);
-  const [now,setNow]=useState(new Date());
+// ═══════════════════════════════════════
+export default function MorningBrief() {
+  const saved = load();
+  const [dismissed, setDismissed] = useState<string[]>(saved?.dismissed || []);
+  const [tab, setTab] = useState(saved?.tab || "home");
+  const [focusChecked, setFocusChecked] = useState<Record<string, boolean>>(saved?.focusChecked || {});
+  const [sheet, setSheet] = useState<any>(null);
+  const [now, setNow] = useState(new Date());
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLive, setIsLive] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [lastRefresh,setLastRefresh]=useState(now);
-  const [refreshing,setRefreshing]=useState(false);
-  const [isLive,setIsLive]=useState(false);
+  // Live data state
+  const [liveEmails, setLiveEmails] = useState<any[]>([]);
+  const [liveCalToday, setLiveCalToday] = useState<any[]>([]);
+  const [liveCalTomorrow, setLiveCalTomorrow] = useState<any[]>([]);
+  const [actionItems, setActionItems] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const [focusTasks, setFocusTasks] = useState<any[]>([]);
+  const [noise, setNoise] = useState<string[]>([]);
 
-  // Live data state — starts with fallback, replaced by API data when available
-  const [liveEmails,setLiveEmails]=useState(FALLBACK_EMAILS);
-  const [liveCalToday,setLiveCalToday]=useState(FALLBACK_CAL_TODAY);
-  const [liveCalTomorrow,setLiveCalTomorrow]=useState(FALLBACK_CAL_TOMORROW);
+  // Pull-to-refresh
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+  const [pullDistance, setPullDistance] = useState(0);
 
-  const fetchData=useCallback(async()=>{
-    try{
-      const res=await fetch("/api/data",{cache:"no-store"});
-      const d=await res.json();
-      if(d.live){
-        setLiveEmails(d.emails||[]);
-        if(d.calToday?.length>0) setLiveCalToday(d.calToday);
-        if(d.calTomorrow?.length>0) setLiveCalTomorrow(d.calTomorrow);
-        setIsLive(true);
-      }
-    }catch{}
-  },[]);
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/data", { cache: "no-store" });
+      const d = await res.json();
+      if (d.emails) setLiveEmails(d.emails);
+      if (d.calToday) setLiveCalToday(d.calToday);
+      if (d.calTomorrow) setLiveCalTomorrow(d.calTomorrow);
+      if (d.actionItems) setActionItems(d.actionItems);
+      if (d.followUps) setFollowUps(d.followUps);
+      if (d.noise) setNoise(d.noise);
+      if (d.live) setIsLive(true);
+    } catch {}
+    // Fetch focus tasks
+    try {
+      const res = await fetch("/api/focus");
+      const d = await res.json();
+      if (d.tasks) setFocusTasks(d.tasks);
+    } catch {}
+    setLoading(false);
+  }, []);
 
-  const doRefresh=useCallback(()=>{
+  const doRefresh = useCallback(() => {
     setRefreshing(true);
     setNow(new Date());
-    setLastRefresh(new Date());
-    fetchData().finally(()=>setTimeout(()=>setRefreshing(false),400));
-  },[fetchData]);
+    fetchData().finally(() => setTimeout(() => setRefreshing(false), 400));
+  }, [fetchData]);
 
-  // Fetch on mount
-  useEffect(()=>{fetchData();},[fetchData]);
-  // Auto-refresh every 60 seconds
-  useEffect(()=>{const iv=setInterval(()=>doRefresh(),60000);return()=>clearInterval(iv);},[doRefresh]);
-  // Refresh when tab becomes visible again
-  useEffect(()=>{const handler=()=>{if(document.visibilityState==="visible")doRefresh();};document.addEventListener("visibilitychange",handler);return()=>document.removeEventListener("visibilitychange",handler);},[doRefresh]);
-  useEffect(()=>{save({dismissed,tab,focusChecked});},[dismissed,tab,focusChecked]);
+  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { const iv = setInterval(doRefresh, 60000); return () => clearInterval(iv); }, [doRefresh]);
+  useEffect(() => { const h = () => { if (document.visibilityState === "visible") doRefresh(); }; document.addEventListener("visibilitychange", h); return () => document.removeEventListener("visibilitychange", h); }, [doRefresh]);
+  useEffect(() => { save({ dismissed, tab, focusChecked }); }, [dismissed, tab, focusChecked]);
 
-  const hr=now.getHours();
-  const isEvening=hr>=17;
-  const timeStr=now.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true});
-  const dateStr=now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  const activeEmails=liveEmails.filter(e=>!dismissed.includes(e.id));
-  const dismissEmail=useCallback(id=>{setDismissed(p=>[...p,id]);},[]);
-  const handleAction=useCallback((email,action)=>{if(action==="reply")setSheet({item:email,type:"reply"});else if(action==="done")dismissEmail(email.id);},[dismissEmail]);
-  const toggleFocus=useCallback(id=>{setFocusChecked(p=>({...p,[id]:!p[id]}));},[]);
+  const hr = now.getHours();
+  const isEvening = hr >= 17;
+  const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
+  const dateStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const activeEmails = liveEmails.filter((e: any) => !dismissed.includes(e.id));
+  const dismissEmail = useCallback((id: string) => { setDismissed(p => [...p, id]); }, []);
+  const handleAction = useCallback((email: any, action: string) => { if (action === "reply") setSheet({ item: email, type: "reply" }); else if (action === "done") dismissEmail(email.id); }, [dismissEmail]);
+  const toggleFocus = useCallback((id: string) => { setFocusChecked(p => ({ ...p, [id]: !p[id] })); }, []);
 
-  const calEvents=isEvening?liveCalTomorrow:liveCalToday;
-  const q=isEvening?eveQuote:todayQuote;
-  const accent=isEvening?C.eve:C.cal;
-  const accentBg=isEvening?C.eveBg:C.calBg;
+  const calEvents = isEvening ? liveCalTomorrow : liveCalToday;
+  const q = isEvening ? eveQuote : todayQuote;
+  const accent = isEvening ? C.eve : C.cal;
+  const accentBg = isEvening ? C.eveBg : C.calBg;
+  const pendingCount = actionItems.length + followUps.length;
 
-  const tabs=[
-    {id:"home",label:"Home",icon:isEvening?"🌙":"☀️"},
-    {id:"email",label:"Email",icon:"✉️"},
-    {id:"actions",label:"Actions",icon:<CHECK_ICON/>},
-    {id:"focus",label:"Focus",icon:"🧘"},
+  // Focus task management
+  const [newTask, setNewTask] = useState("");
+  const addFocusTask = async () => {
+    if (!newTask.trim()) return;
+    const res = await fetch("/api/focus", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", text: newTask.trim() }) });
+    const d = await res.json();
+    setFocusTasks(d.tasks);
+    setNewTask("");
+  };
+  const deleteFocusTask = async (id: string) => {
+    const res = await fetch("/api/focus", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id }) });
+    const d = await res.json();
+    setFocusTasks(d.tasks);
+  };
+
+  // Pull-to-refresh handlers
+  const onTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const el = scrollRef.current;
+    if (!el || el.scrollTop > 0) return;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (dy > 0) setPullDistance(Math.min(dy * 0.4, 80));
+  };
+  const onTouchEnd = () => {
+    if (pullDistance > 50) doRefresh();
+    setPullDistance(0);
+  };
+
+  const tabs = [
+    { id: "home", label: "Home", icon: isEvening ? "🌙" : "☀️" },
+    { id: "email", label: "Email", icon: "✉️" },
+    { id: "actions", label: "Pending", icon: <CheckIcon /> },
+    { id: "focus", label: "Focus", icon: "🧘" },
   ];
 
-  return(
-    <div style={{maxWidth:390,margin:"0 auto",minHeight:"100vh",background:isEvening?"#F0EDF8":C.bg,fontFamily:"-apple-system,'SF Pro Display','SF Pro Text',system-ui,sans-serif",position:"relative",paddingBottom:90,transition:"background .5s ease"}}>
+  const voiceBriefGen = (emails: any[], eve: boolean) => generateVoiceBrief(emails, eve, actionItems, followUps, liveCalToday, liveCalTomorrow);
 
-      {/* Status Bar */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 24px 0",color:C.muted,fontSize:12,fontWeight:600}}>
-        <span>{timeStr}</span>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <button onClick={doRefresh} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:4,color:isLive?C.live:C.later,fontSize:10,fontWeight:700,transition:"opacity .2s",opacity:refreshing?0.5:1}}>
-            <span style={{display:"inline-block",transition:"transform .6s",transform:refreshing?"rotate(360deg)":"rotate(0deg)"}}>↻</span>
-            {isLive?<LiveDot/>:<span style={{display:"inline-block",width:6,height:6,borderRadius:3,background:C.later}}/>}
-            <span>{isLive?"Gmail + Calendar":"Offline · tap to sync"}</span>
-          </button>
+  return (
+    <div
+      ref={scrollRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="max-w-[390px] mx-auto min-h-screen relative pb-24 transition-colors duration-500"
+      style={{ background: isEvening ? "#F0EDF8" : C.bg, fontFamily: "-apple-system,'SF Pro Display','SF Pro Text',system-ui,sans-serif" }}
+    >
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div className="flex justify-center py-2 transition-all" style={{ height: pullDistance }}>
+          <span className="text-lg" style={{ opacity: pullDistance / 80, transform: `rotate(${pullDistance * 4}deg)` }}>↻</span>
         </div>
-      </div>
-      {/* Last updated */}
-      <div style={{padding:"2px 24px 0",textAlign:"right"}}>
-        <span style={{fontSize:9,color:C.light}}>Updated {lastRefresh.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true}).toLowerCase()}{refreshing?" · refreshing…":""}</span>
+      )}
+
+      {/* Status Bar - minimal, just sync status */}
+      <div className="flex justify-end items-center px-6 pt-2">
+        <button onClick={doRefresh} className="flex items-center gap-1 bg-transparent border-none cursor-pointer p-0 text-[10px] font-bold transition-opacity" style={{ color: isLive ? C.live : C.later, opacity: refreshing ? 0.5 : 1 }}>
+          <span className="inline-block transition-transform duration-500" style={{ transform: refreshing ? "rotate(360deg)" : "rotate(0)" }}>↻</span>
+          {isLive ? <LiveDot /> : <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: C.later }} />}
+          <span>{isLive ? "Synced" : "Offline"}</span>
+        </button>
       </div>
 
       {/* Header */}
-      <div style={{padding:"14px 24px 0"}}>
-        <p style={{fontSize:13,color:C.light,fontWeight:500,margin:0}}>{dateStr}</p>
-        <h1 style={{fontSize:28,fontWeight:800,color:C.text,margin:"2px 0 0",letterSpacing:-.8}}>{isEvening?"Evening Brief":"Morning Brief"}</h1>
-        <p style={{fontSize:14,color:C.muted,marginTop:4}}>{isEvening?"Let's wrap up your day, Harshita.":"Hey Harshita — here's your day at a glance."}</p>
+      <div className="px-6 pt-3">
+        <p className="text-[13px] font-medium m-0" style={{ color: C.light }}>{dateStr}</p>
+        <h1 className="text-[28px] font-extrabold m-0 mt-0.5 tracking-tight" style={{ color: C.text }}>{isEvening ? "Evening Brief" : "Morning Brief"}</h1>
+        <p className="text-sm mt-1" style={{ color: C.muted }}>{isEvening ? "Let's wrap up your day, Harshita." : "Hey Harshita — here's your day at a glance."}</p>
       </div>
 
-      <div style={{padding:"0 20px 20px"}}>
+      <div className="px-5 pb-5">
+        {loading ? <LoadingSkeleton /> : <>
 
-        {/* ════ HOME ════ */}
-        {tab==="home"&&<>
-          {/* Summary */}
-          <div style={{marginTop:20,background:isEvening?"linear-gradient(135deg,#FFFFFF,#F0EDF8)":"linear-gradient(135deg,#FFFFFF,#F7F5F0)",borderRadius:18,padding:"18px 20px",boxShadow:`0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}`}}>
-            <p style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1.2,color:C.light,margin:"0 0 12px"}}>{isEvening?"End of day snapshot":"Today at a glance"}</p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              {(isEvening?[
-                {num:activeEmails.length,label:"emails still unread",icon:"✉️",color:C.email,bg:C.emailBg},
-                {num:ACTION_ITEMS.length,label:"actions still open",icon:"🔴",color:C.urgent,bg:C.urgentBg},
-                {num:FOLLOW_UPS.length,label:"follow-ups pending",icon:"🔁",color:C.later,bg:C.laterBg},
-                {num:liveCalTomorrow.length,label:"events tomorrow",icon:"📅",color:C.eve,bg:C.eveBg},
-              ]:[
-                {num:activeEmails.length,label:"priority emails",icon:"✉️",color:C.email,bg:C.emailBg},
-                {num:liveCalToday.length,label:"meetings today",icon:"📅",color:C.cal,bg:C.calBg},
-                {num:ACTION_ITEMS.length,label:"action items",icon:"🔴",color:C.urgent,bg:C.urgentBg},
-                {num:FOLLOW_UPS.length,label:"follow-ups",icon:"🔁",color:C.later,bg:C.laterBg},
-              ]).map((s,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:10,background:s.bg,borderRadius:12,padding:"10px 12px"}}>
-                  <span style={{fontSize:18}}>{s.icon}</span>
+        {/* ═══ HOME ═══ */}
+        {tab === "home" && <>
+          {/* Summary Grid */}
+          <div className="mt-5 rounded-[18px] p-[18px]" style={{ background: isEvening ? "linear-gradient(135deg,#FFFFFF,#F0EDF8)" : "linear-gradient(135deg,#FFFFFF,#F7F5F0)", boxShadow: `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <p className="text-[11px] font-bold uppercase tracking-wider m-0 mb-3" style={{ color: C.light }}>{isEvening ? "End of day snapshot" : "Today at a glance"}</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {(isEvening ? [
+                { num: activeEmails.length, label: "emails still unread", icon: "✉️", color: C.email, bg: C.emailBg },
+                { num: actionItems.length, label: "actions still open", icon: "🔴", color: C.urgent, bg: C.urgentBg },
+                { num: followUps.length, label: "follow-ups pending", icon: "🔁", color: C.later, bg: C.laterBg },
+                { num: liveCalTomorrow.length, label: "events tomorrow", icon: "📅", color: C.eve, bg: C.eveBg },
+              ] : [
+                { num: activeEmails.length, label: "priority emails", icon: "✉️", color: C.email, bg: C.emailBg },
+                { num: liveCalToday.length, label: "meetings today", icon: "📅", color: C.cal, bg: C.calBg },
+                { num: actionItems.length, label: "action items", icon: "🔴", color: C.urgent, bg: C.urgentBg },
+                { num: followUps.length, label: "follow-ups", icon: "🔁", color: C.later, bg: C.laterBg },
+              ]).map((s, i) => (
+                <div key={i} className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: s.bg }}>
+                  <span className="text-lg">{s.icon}</span>
                   <div>
-                    <p style={{fontSize:20,fontWeight:800,color:s.color,margin:0,lineHeight:1}}>{s.num}</p>
-                    <p style={{fontSize:11,color:C.muted,margin:"2px 0 0",fontWeight:500}}>{s.label}</p>
+                    <p className="text-xl font-extrabold m-0 leading-none" style={{ color: s.color }}>{s.num}</p>
+                    <p className="text-[11px] m-0 mt-0.5 font-medium" style={{ color: C.muted }}>{s.label}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <p style={{fontSize:12,color:accent,fontWeight:600,margin:"12px 0 0",textAlign:"center"}}>{isEvening?"Review pending items before winding down 🌙":"Light Saturday — great day for deep work 🌿"}</p>
+            <p className="text-xs font-semibold m-0 mt-3 text-center" style={{ color: accent }}>{getDayInsight(calEvents.length, isEvening, dayName)}</p>
           </div>
 
           {/* Voice */}
-          <VoicePlayer emails={activeEmails} isEvening={isEvening}/>
+          <VoicePlayer emails={activeEmails} isEvening={isEvening} generateVoiceBrief={voiceBriefGen} />
 
-          {/* Calendar / Tomorrow */}
-          <Section icon="📅" title={isEvening?"Tomorrow":"Today's Calendar"} count={calEvents.length} color={accent} live/>
-          {calEvents.map(e=>(
-            <div key={e.id} onClick={()=>setSheet({item:e,type:"cal"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer",transition:"transform .12s"}}
-            onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-              <div style={{display:"flex",gap:14,alignItems:"center"}}>
-                <div style={{minWidth:60,textAlign:"center"}}><p style={{fontSize:13,fontWeight:700,color:accent,margin:0}}>{e.time}</p>{e.end&&<p style={{fontSize:11,color:C.muted,margin:"2px 0 0"}}>{e.end}</p>}</div>
-                <div style={{width:2,height:32,background:accentBg,borderRadius:1}}/>
-                <div style={{flex:1}}><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{e.title}</p><p style={{fontSize:12,color:C.muted,margin:"2px 0 0"}}>{e.note}</p></div>
-                <span style={{color:C.light}}>›</span>
+          {/* Emails FIRST (above calendar) */}
+          <Section icon="✉️" title={isEvening ? "Still Unread" : "Priority Emails"} count={activeEmails.length} color={C.email} live />
+          {activeEmails.length === 0 ? (
+            <div className="rounded-xl p-3.5 text-center" style={{ background: C.emailBg }}>
+              <p className="text-[13px] font-semibold m-0" style={{ color: C.email }}>{isEvening ? "You cleared your inbox today" : "All clear — inbox zero on priorities"}</p>
+            </div>
+          ) : activeEmails.map((e: any) => <SwipeableEmail key={e.id} email={e} onDismiss={dismissEmail} onAction={handleAction} />)}
+
+          {/* Calendar */}
+          <Section icon="📅" title={isEvening ? "Tomorrow" : "Today's Calendar"} count={calEvents.length} color={accent} live />
+          {calEvents.map((e: any) => (
+            <div key={e.id} onClick={() => setSheet({ item: e, type: "cal" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer transition-transform active:scale-[0.98]" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex gap-3.5 items-center">
+                <div className="min-w-[60px] text-center">
+                  <p className="text-[13px] font-bold m-0" style={{ color: accent }}>{e.time}</p>
+                  {e.end && <p className="text-[11px] m-0 mt-0.5" style={{ color: C.muted }}>{e.end}</p>}
+                </div>
+                <div className="w-0.5 h-8 rounded-sm" style={{ background: accentBg }} />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold m-0" style={{ color: C.text }}>{e.title}</p>
+                  <p className="text-xs m-0 mt-0.5" style={{ color: C.muted }}>{e.note}</p>
+                </div>
+                <span style={{ color: C.light }}>›</span>
               </div>
             </div>
           ))}
 
-          {/* Emails */}
-          <Section icon="✉️" title={isEvening?"Still Unread":"Priority Emails"} count={activeEmails.length} color={C.email} live/>
-          {activeEmails.length===0?(
-            <div style={{background:C.emailBg,borderRadius:12,padding:14,textAlign:"center"}}><p style={{fontSize:13,color:C.email,fontWeight:600,margin:0}}>{isEvening?"You cleared your inbox today":"All clear — inbox zero on priorities"}</p></div>
-          ):(
-            activeEmails.map(e=><SwipeableEmail key={e.id} email={e} onDismiss={dismissEmail} onAction={handleAction}/>)
-          )}
-
-          {/* Pending Items (Actions + Follow-ups consolidated) */}
-          <Section icon={<CHECK_ICON/>} title={isEvening?"Still Pending":"Pending Items"} count={ACTION_ITEMS.length+FOLLOW_UPS.length} color={C.urgent}/>
-          {ACTION_ITEMS.map(a=>(
-            <div key={a.id} onClick={()=>setSheet({item:a,type:"urgent"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer",transition:"transform .12s"}}
-            onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg}/>
-                <p style={{fontSize:14,fontWeight:600,color:C.text,margin:0,flex:1}}>{a.title}</p>
-                <span style={{color:C.light}}>›</span>
+          {/* Pending Items (consolidated) */}
+          <Section icon={<CheckIcon />} title={isEvening ? "Still Pending" : "Pending Items"} count={pendingCount} color={C.urgent} />
+          {actionItems.map((a: any) => (
+            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer transition-transform active:scale-[0.98]" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex items-center gap-2">
+                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg} />
+                <p className="text-sm font-semibold m-0 flex-1" style={{ color: C.text }}>{a.title}</p>
+                <span style={{ color: C.light }}>›</span>
               </div>
             </div>
           ))}
-          {FOLLOW_UPS.map(f=>(
-            <div key={f.id} onClick={()=>setSheet({item:f,type:"follow"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer",transition:"transform .12s"}}
-            onMouseDown={e=>e.currentTarget.style.transform="scale(0.98)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1}}><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{f.task}</p>
-                  <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center"}}><span style={{fontSize:12,color:C.muted}}>{f.name}</span><Badge text={`${f.days}d`} color={f.days>=4?C.urgent:C.later} bg={f.days>=4?C.urgentBg:C.laterBg}/><Badge text={f.status} color={C.muted} bg={C.border}/></div>
-                </div><span style={{color:C.light}}>›</span>
+          {followUps.map((f: any) => (
+            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer transition-transform active:scale-[0.98]" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold m-0" style={{ color: C.text }}>{f.task}</p>
+                  <div className="flex gap-1.5 mt-1 items-center">
+                    <span className="text-xs" style={{ color: C.muted }}>{f.name}</span>
+                    <Badge text={`${f.days}d`} color={f.days >= 4 ? C.urgent : C.later} bg={f.days >= 4 ? C.urgentBg : C.laterBg} />
+                    <Badge text={f.status} color={C.muted} bg={C.border} />
+                  </div>
+                </div>
+                <span style={{ color: C.light }}>›</span>
               </div>
             </div>
           ))}
 
           {/* Filtered */}
-          <Section icon="🔇" title="Filtered Out" count={FALLBACK_NOISE.length} color={C.light}/>
-          <div style={{background:C.card,borderRadius:16,padding:"12px 16px",boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`}}>
-            {FALLBACK_NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
-          </div>
+          {noise.length > 0 && <>
+            <Section icon="🔇" title="Filtered Out" count={noise.length} color={C.light} />
+            <div className="rounded-2xl px-4 py-3" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              {noise.map((n: string, i: number) => <p key={i} className="text-xs m-0 my-[3px] leading-relaxed" style={{ color: C.light }}>• {n}</p>)}
+            </div>
+          </>}
         </>}
 
-        {/* ════ EMAIL TAB ════ */}
-        {tab==="email"&&<>
-          <Section icon="✉️" title="Priority Emails" count={activeEmails.length} color={C.email} live/>
-          <p style={{fontSize:12,color:C.muted,marginBottom:12}}>Swipe left to remove. Tap Reply, Later, or Done.</p>
-          {activeEmails.length===0?<div style={{background:C.emailBg,borderRadius:12,padding:14,textAlign:"center"}}><p style={{fontSize:13,color:C.email,fontWeight:600,margin:0}}>All clear</p></div>
-          :activeEmails.map(e=><SwipeableEmail key={e.id} email={e} onDismiss={dismissEmail} onAction={handleAction}/>)}
-
-          {/* Pending Items */}
-          <Section icon={<CHECK_ICON/>} title="Pending" count={ACTION_ITEMS.length+FOLLOW_UPS.length} color={C.urgent}/>
-          {ACTION_ITEMS.map(a=>(
-            <div key={a.id} onClick={()=>setSheet({item:a,type:"urgent"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg}/>
-                <p style={{fontSize:14,fontWeight:600,color:C.text,margin:0,flex:1}}>{a.title}</p><span style={{color:C.light}}>›</span>
+        {/* ═══ EMAIL TAB ═══ */}
+        {tab === "email" && <>
+          <Section icon="✉️" title="Priority Emails" count={activeEmails.length} color={C.email} live />
+          <p className="text-xs mb-3" style={{ color: C.muted }}>Swipe left to remove. Tap Reply or Done.</p>
+          {activeEmails.length === 0
+            ? <div className="rounded-xl p-3.5 text-center" style={{ background: C.emailBg }}><p className="text-[13px] font-semibold m-0" style={{ color: C.email }}>All clear</p></div>
+            : activeEmails.map((e: any) => <SwipeableEmail key={e.id} email={e} onDismiss={dismissEmail} onAction={handleAction} />)
+          }
+          <Section icon={<CheckIcon />} title="Pending" count={pendingCount} color={C.urgent} />
+          {actionItems.map((a: any) => (
+            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex items-center gap-2">
+                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg} />
+                <p className="text-sm font-semibold m-0 flex-1" style={{ color: C.text }}>{a.title}</p>
+                <span style={{ color: C.light }}>›</span>
               </div>
             </div>
           ))}
-          {FOLLOW_UPS.map(f=>(
-            <div key={f.id} onClick={()=>setSheet({item:f,type:"follow"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{f.task}</p><div style={{display:"flex",gap:6,marginTop:4}}><span style={{fontSize:12,color:C.muted}}>{f.name}</span><Badge text={`${f.days}d`} color={f.days>=4?C.urgent:C.later} bg={f.days>=4?C.urgentBg:C.laterBg}/></div></div>
-                <span style={{color:C.light}}>›</span>
+          {followUps.map((f: any) => (
+            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex justify-between items-center">
+                <div><p className="text-sm font-semibold m-0" style={{ color: C.text }}>{f.task}</p><div className="flex gap-1.5 mt-1"><span className="text-xs" style={{ color: C.muted }}>{f.name}</span><Badge text={`${f.days}d`} color={f.days >= 4 ? C.urgent : C.later} bg={f.days >= 4 ? C.urgentBg : C.laterBg} /></div></div>
+                <span style={{ color: C.light }}>›</span>
               </div>
             </div>
           ))}
-
-          <Section icon="🔇" title="Filtered Noise" count={FALLBACK_NOISE.length} color={C.light}/>
-          <div style={{background:C.card,borderRadius:16,padding:"12px 16px",boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`}}>
-            {FALLBACK_NOISE.map((n,i)=><p key={i} style={{fontSize:12,color:C.light,margin:"3px 0",lineHeight:1.5}}>• {n}</p>)}
-          </div>
+          {noise.length > 0 && <>
+            <Section icon="🔇" title="Filtered Noise" count={noise.length} color={C.light} />
+            <div className="rounded-2xl px-4 py-3" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              {noise.map((n: string, i: number) => <p key={i} className="text-xs m-0 my-[3px] leading-relaxed" style={{ color: C.light }}>• {n}</p>)}
+            </div>
+          </>}
         </>}
 
-        {/* ════ ACTIONS TAB ════ */}
-        {tab==="actions"&&<>
-          <Section icon={<CHECK_ICON/>} title="Action Items" count={ACTION_ITEMS.length} color={C.urgent}/>
-          {ACTION_ITEMS.map(a=>(
-            <div key={a.id} onClick={()=>setSheet({item:a,type:"urgent"})} style={{background:C.card,borderRadius:16,padding:"14px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg}/>
-                <p style={{fontSize:14,fontWeight:600,color:C.text,margin:0,flex:1}}>{a.title}</p><span style={{color:C.light}}>›</span>
+        {/* ═══ ACTIONS TAB (consolidated as Pending) ═══ */}
+        {tab === "actions" && <>
+          <Section icon={<CheckIcon />} title="Pending Items" count={pendingCount} color={C.urgent} />
+          {actionItems.map((a: any) => (
+            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-2xl px-4 py-3.5 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex items-center gap-2">
+                <Badge text={a.tag} color={C.urgent} bg={C.urgentBg} />
+                <p className="text-sm font-semibold m-0 flex-1" style={{ color: C.text }}>{a.title}</p>
+                <span style={{ color: C.light }}>›</span>
               </div>
-              {a.detail&&<p style={{fontSize:12,color:C.muted,margin:"6px 0 0",lineHeight:1.5}}>{a.detail}</p>}
+              {a.detail && <p className="text-xs m-0 mt-1.5 leading-relaxed" style={{ color: C.muted }}>{a.detail}</p>}
             </div>
           ))}
-          <Section icon="🔁" title="Follow-ups" count={FOLLOW_UPS.length} color={C.later}/>
-          {FOLLOW_UPS.map(f=>(
-            <div key={f.id} onClick={()=>setSheet({item:f,type:"follow"})} style={{background:C.card,borderRadius:16,padding:"12px 16px",marginBottom:8,boxShadow:`0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}`,cursor:"pointer"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div><p style={{fontSize:14,fontWeight:600,color:C.text,margin:0}}>{f.task}</p><div style={{display:"flex",gap:6,marginTop:4}}><span style={{fontSize:12,color:C.muted}}>{f.name}</span><Badge text={`${f.days}d`} color={f.days>=4?C.urgent:C.later} bg={f.days>=4?C.urgentBg:C.laterBg}/></div></div>
-                <span style={{color:C.light}}>›</span>
+          {followUps.map((f: any) => (
+            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+              <div className="flex justify-between items-center">
+                <div><p className="text-sm font-semibold m-0" style={{ color: C.text }}>{f.task}</p><div className="flex gap-1.5 mt-1"><span className="text-xs" style={{ color: C.muted }}>{f.name}</span><Badge text={`${f.days}d`} color={f.days >= 4 ? C.urgent : C.later} bg={f.days >= 4 ? C.urgentBg : C.laterBg} /></div></div>
+                <span style={{ color: C.light }}>›</span>
               </div>
             </div>
           ))}
         </>}
 
-        {/* ════ FOCUS TAB ════ */}
-        {tab==="focus"&&<>
-          <Section icon="🧘" title={isEvening?"Wind Down":"Suggested Focus"} color={C.focus}/>
-          <div style={{background:`linear-gradient(135deg,${C.focusBg},${C.card})`,borderRadius:18,padding:"20px",border:`1.5px solid ${C.focus}22`,marginBottom:12}}>
-            <p style={{fontSize:17,fontWeight:700,color:C.focus,margin:0}}>{isEvening?"Evening Review":"Deep Work: Content Strategy"}</p>
-            <p style={{fontSize:13,color:C.muted,margin:"8px 0 16px"}}>{isEvening?"Before you close out, check off what you got done:":"Saturday is wide open. Block 2–3 hours:"}</p>
-            {FOCUS_TASKS.map(t=>(
-              <div key={t.id} onClick={()=>toggleFocus(t.id)} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",cursor:"pointer"}}>
-                <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${C.focus}`,background:focusChecked[t.id]?C.focus:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",flexShrink:0}}>
-                  {focusChecked[t.id]&&<span style={{color:"#fff",fontSize:12,fontWeight:700}}>✓</span>}
+        {/* ═══ FOCUS TAB (editable) ═══ */}
+        {tab === "focus" && <>
+          <Section icon="🧘" title={isEvening ? "Wind Down" : "Suggested Focus"} color={C.focus} />
+          <div className="rounded-[18px] p-5 mb-3" style={{ background: `linear-gradient(135deg,${C.focusBg},${C.card})`, border: `1.5px solid ${C.focus}22` }}>
+            <p className="text-[17px] font-bold m-0" style={{ color: C.focus }}>{isEvening ? "Evening Review" : "Deep Work"}</p>
+            <p className="text-[13px] m-0 mt-2 mb-4" style={{ color: C.muted }}>{getFocusSubtitle(isEvening, calEvents.length, dayName)}</p>
+            {focusTasks.map((t: any) => (
+              <div key={t.id} className="flex gap-2.5 items-center py-2 group">
+                <div onClick={() => toggleFocus(t.id)} className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 cursor-pointer transition-all" style={{ border: `2px solid ${C.focus}`, background: focusChecked[t.id] ? C.focus : "transparent" }}>
+                  {focusChecked[t.id] && <span className="text-white text-xs font-bold">✓</span>}
                 </div>
-                <span style={{fontSize:14,color:focusChecked[t.id]?C.muted:C.text,textDecoration:focusChecked[t.id]?"line-through":"none",transition:"all .15s"}}>{t.text}</span>
+                <span className="text-sm flex-1 transition-all" style={{ color: focusChecked[t.id] ? C.muted : C.text, textDecoration: focusChecked[t.id] ? "line-through" : "none" }}>{t.text}</span>
+                <button onClick={() => deleteFocusTask(t.id)} className="opacity-0 group-hover:opacity-100 text-xs bg-transparent border-none cursor-pointer px-1" style={{ color: C.dismiss }}>✕</button>
               </div>
             ))}
-            <p style={{fontSize:12,color:C.focus,fontWeight:600,margin:"12px 0 0",textAlign:"center"}}>{Object.values(focusChecked).filter(Boolean).length}/{FOCUS_TASKS.length} completed</p>
+            {/* Add new task */}
+            <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
+              <input value={newTask} onChange={e => setNewTask(e.target.value)} onKeyDown={e => e.key === "Enter" && addFocusTask()} placeholder="Add a focus task..." className="flex-1 text-sm bg-transparent border-none outline-none" style={{ color: C.text }} />
+              <button onClick={addFocusTask} className="text-xs font-bold bg-transparent border-none cursor-pointer px-2 py-1 rounded-lg" style={{ color: C.focus, background: C.focusBg }}>Add</button>
+            </div>
+            <p className="text-xs font-semibold m-0 mt-3 text-center" style={{ color: C.focus }}>{Object.values(focusChecked).filter(Boolean).length}/{focusTasks.length} completed</p>
           </div>
-          <div style={{background:accentBg,borderRadius:14,padding:16}}>
-            <p style={{fontSize:14,fontWeight:600,color:accent,margin:"0 0 6px"}}>{isEvening?"Tomorrow: Monthly Excursion":"Calendar is clear"}</p>
-            <p style={{fontSize:13,color:C.muted,margin:0,lineHeight:1.6}}>{isEvening?"You have an all-day Monthly Excursion tomorrow plus your evening goal-setting. Plan accordingly.":"Only 2 recurring personal events. No external meetings. Use this Saturday wisely."}</p>
+          <div className="rounded-[14px] p-4" style={{ background: accentBg }}>
+            <p className="text-sm font-semibold m-0 mb-1.5" style={{ color: accent }}>
+              {isEvening ? `Tomorrow: ${liveCalTomorrow.length} events` : `${dayName}: ${calEvents.length} events`}
+            </p>
+            <p className="text-[13px] m-0 leading-relaxed" style={{ color: C.muted }}>
+              {isEvening
+                ? (liveCalTomorrow.length > 0 ? `First up: ${liveCalTomorrow[0].title} at ${liveCalTomorrow[0].time}. Plan accordingly.` : "Tomorrow looks clear. Rest well.")
+                : (calEvents.length <= 2 ? `Light day. Use this ${dayName} wisely for deep work.` : `Busy day ahead with ${calEvents.length} events. Protect your focus blocks.`)
+              }
+            </p>
           </div>
         </>}
 
         {/* Bottom Quote */}
-        <div style={{marginTop:32,padding:"20px 16px",borderTop:`1px solid ${C.border}`,textAlign:"center"}}>
-          <p style={{fontSize:14,color:C.text,fontStyle:"italic",lineHeight:1.6,margin:"0 0 6px"}}>"{q.t}"</p>
-          <p style={{fontSize:12,color:C.light,margin:0}}>— {q.a}</p>
+        <div className="mt-8 px-4 py-5 text-center" style={{ borderTop: `1px solid ${C.border}` }}>
+          <p className="text-sm italic leading-relaxed m-0 mb-1.5" style={{ color: C.text }}>"{q.t}"</p>
+          <p className="text-xs m-0" style={{ color: C.light }}>— {q.a}</p>
         </div>
+
+        </>}
       </div>
 
       {/* Tab Bar */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:390,background:isEvening?"rgba(240,237,248,0.94)":"rgba(247,245,240,0.94)",backdropFilter:"blur(16px)",borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0 24px",zIndex:50,transition:"background .5s ease"}}>
-        {tabs.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"4px 12px",transition:"transform .12s"}}
-          onMouseDown={e=>e.currentTarget.style.transform="scale(0.9)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-            <span style={{fontSize:typeof t.icon==="string"?20:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{t.icon}</span>
-            <span style={{fontSize:10,fontWeight:tab===t.id?700:500,color:tab===t.id?C.text:C.muted}}>{t.label}</span>
-            {tab===t.id&&<div style={{width:4,height:4,borderRadius:2,background:C.text,marginTop:1}}/>}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] flex justify-around py-2 pb-6 z-50 transition-colors duration-500" style={{ background: isEvening ? "rgba(240,237,248,0.94)" : "rgba(247,245,240,0.94)", backdropFilter: "blur(16px)", borderTop: `1px solid ${C.border}` }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className="bg-transparent border-none cursor-pointer flex flex-col items-center gap-0.5 px-3 py-1 transition-transform active:scale-90">
+            <span className={`flex items-center justify-center ${typeof t.icon === "string" ? "text-xl" : "text-base"}`}>{t.icon}</span>
+            <span className="text-[10px]" style={{ fontWeight: tab === t.id ? 700 : 500, color: tab === t.id ? C.text : C.muted }}>{t.label}</span>
+            {tab === t.id && <div className="w-1 h-1 rounded-full mt-0.5" style={{ background: C.text }} />}
           </button>
         ))}
       </div>
 
-      {sheet&&<Sheet item={sheet.item} type={sheet.type} onClose={()=>setSheet(null)}/>}
+      {sheet && <Sheet item={sheet.item} type={sheet.type} onClose={() => setSheet(null)} />}
     </div>
   );
 }
