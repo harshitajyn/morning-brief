@@ -205,29 +205,33 @@ export default function MorningBrief() {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       className="max-w-[390px] mx-auto min-h-screen relative pb-24 transition-colors duration-500"
-      style={{ background: isEvening ? "#F0EDF8" : C.bg, fontFamily: "-apple-system,'SF Pro Display','SF Pro Text',system-ui,sans-serif" }}
+      style={{ background: isEvening ? "#0F0F1A" : C.bg, fontFamily: "-apple-system,'SF Pro Display','SF Pro Text',system-ui,sans-serif" }}
     >
       {/* Pull-to-refresh indicator */}
       {pullDistance > 0 && (
         <div className="flex justify-center py-2 transition-all" style={{ height: pullDistance }}>
-          <span className="text-lg" style={{ opacity: pullDistance / 80, transform: `rotate(${pullDistance * 4}deg)` }}>↻</span>
+          <span className="text-lg" style={{ opacity: pullDistance / 80, transform: `rotate(${pullDistance * 4}deg)`, color: isEvening ? "#fff" : C.text }}>↻</span>
         </div>
       )}
 
-      {/* Status Bar - minimal, just sync status */}
-      <div className="flex justify-end items-center px-6 pt-2">
-        <button onClick={doRefresh} className="flex items-center gap-1 bg-transparent border-none cursor-pointer p-0 text-[10px] font-bold transition-opacity" style={{ color: isLive ? C.live : C.later, opacity: refreshing ? 0.5 : 1 }}>
+      {/* Status Bar - minimal */}
+      <div className="flex justify-end items-center px-6 pt-3">
+        <button onClick={doRefresh} className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer p-1.5 px-3 rounded-full text-[10px] font-bold transition-all" style={{ color: isLive ? C.live : C.later, opacity: refreshing ? 0.5 : 1, background: isLive ? C.liveBg : C.laterBg }}>
           <span className="inline-block transition-transform duration-500" style={{ transform: refreshing ? "rotate(360deg)" : "rotate(0)" }}>↻</span>
           {isLive ? <LiveDot /> : <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: C.later }} />}
           <span>{isLive ? "Synced" : "Offline"}</span>
         </button>
       </div>
 
-      {/* Header */}
-      <div className="px-6 pt-3">
-        <p className="text-[13px] font-medium m-0" style={{ color: C.light }}>{dateStr}</p>
-        <h1 className="text-[28px] font-extrabold m-0 mt-0.5 tracking-tight" style={{ color: C.text }}>{isEvening ? "Evening Brief" : "Morning Brief"}</h1>
-        <p className="text-sm mt-1" style={{ color: C.muted }}>{isEvening ? "Let's wrap up your day, Harshita." : "Hey Harshita — here's your day at a glance."}</p>
+      {/* Header with gradient title */}
+      <div className="px-6 pt-2">
+        <p className="text-[13px] font-medium m-0" style={{ color: isEvening ? "rgba(255,255,255,0.4)" : C.light }}>{dateStr}</p>
+        <h1 className="text-[32px] font-black m-0 mt-0.5 tracking-tighter" style={{
+          background: isEvening ? "linear-gradient(135deg, #818CF8, #C084FC)" : "linear-gradient(135deg, #1A1A2E, #4F7FFF)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}>{isEvening ? "Evening Brief" : "Morning Brief"}</h1>
+        <p className="text-sm mt-1" style={{ color: isEvening ? "rgba(255,255,255,0.5)" : C.muted }}>{isEvening ? "Let's wrap up your day, Harshita." : "Hey Harshita — here's your day at a glance."}</p>
       </div>
 
       <div className="px-5 pb-5">
@@ -236,30 +240,30 @@ export default function MorningBrief() {
         {/* ═══ HOME ═══ */}
         {tab === "home" && <>
           {/* Summary Grid */}
-          <div className="mt-5 rounded-[18px] p-[18px]" style={{ background: isEvening ? "linear-gradient(135deg,#FFFFFF,#F0EDF8)" : "linear-gradient(135deg,#FFFFFF,#F7F5F0)", boxShadow: `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
-            <p className="text-[11px] font-bold uppercase tracking-wider m-0 mb-3" style={{ color: C.light }}>{isEvening ? "End of day snapshot" : "Today at a glance"}</p>
-            <div className="grid grid-cols-2 gap-2.5">
+          <div className="mt-5 rounded-[22px] p-5" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 4px 20px ${C.shadow}, 0 0 0 1px ${C.border}`, border: isEvening ? `1px solid rgba(255,255,255,0.08)` : "none" }}>
+            <p className="text-[11px] font-bold uppercase tracking-wider m-0 mb-3" style={{ color: isEvening ? "rgba(255,255,255,0.35)" : C.light }}>{isEvening ? "End of day snapshot" : "Today at a glance"}</p>
+            <div className="grid grid-cols-2 gap-3">
               {(isEvening ? [
-                { num: activeEmails.length, label: "emails still unread", icon: "✉️", color: C.email, bg: C.emailBg },
-                { num: actionItems.length, label: "actions still open", icon: "🔴", color: C.urgent, bg: C.urgentBg },
-                { num: followUps.length, label: "follow-ups pending", icon: "🔁", color: C.later, bg: C.laterBg },
-                { num: liveCalTomorrow.length, label: "events tomorrow", icon: "📅", color: C.eve, bg: C.eveBg },
+                { num: activeEmails.length, label: "emails still unread", icon: "✉️", color: C.email, bg: C.emailBg, grad: "linear-gradient(135deg, #EEF3FF, #E0EAFF)" },
+                { num: actionItems.length, label: "actions still open", icon: "🔴", color: C.urgent, bg: C.urgentBg, grad: "linear-gradient(135deg, #FFF0F0, #FFE0E0)" },
+                { num: followUps.length, label: "follow-ups pending", icon: "🔁", color: C.later, bg: C.laterBg, grad: "linear-gradient(135deg, #FFFBEB, #FFF3D0)" },
+                { num: liveCalTomorrow.length, label: "events tomorrow", icon: "📅", color: C.eve, bg: C.eveBg, grad: "linear-gradient(135deg, #EEF2FF, #E0E7FF)" },
               ] : [
-                { num: activeEmails.length, label: "priority emails", icon: "✉️", color: C.email, bg: C.emailBg },
-                { num: liveCalToday.length, label: "meetings today", icon: "📅", color: C.cal, bg: C.calBg },
-                { num: actionItems.length, label: "action items", icon: "🔴", color: C.urgent, bg: C.urgentBg },
-                { num: followUps.length, label: "follow-ups", icon: "🔁", color: C.later, bg: C.laterBg },
+                { num: activeEmails.length, label: "priority emails", icon: "✉️", color: C.email, bg: C.emailBg, grad: "linear-gradient(135deg, #EEF3FF, #E0EAFF)" },
+                { num: liveCalToday.length, label: "meetings today", icon: "📅", color: C.cal, bg: C.calBg, grad: "linear-gradient(135deg, #ECFDF5, #D1FAE5)" },
+                { num: actionItems.length, label: "action items", icon: "🔴", color: C.urgent, bg: C.urgentBg, grad: "linear-gradient(135deg, #FFF0F0, #FFE0E0)" },
+                { num: followUps.length, label: "follow-ups", icon: "🔁", color: C.later, bg: C.laterBg, grad: "linear-gradient(135deg, #FFFBEB, #FFF3D0)" },
               ]).map((s, i) => (
-                <div key={i} className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: s.bg }}>
-                  <span className="text-lg">{s.icon}</span>
+                <div key={i} className="flex items-center gap-3 rounded-2xl p-3" style={{ background: isEvening ? "rgba(255,255,255,0.06)" : s.grad }}>
+                  <span className="text-2xl">{s.icon}</span>
                   <div>
-                    <p className="text-xl font-extrabold m-0 leading-none" style={{ color: s.color }}>{s.num}</p>
-                    <p className="text-[11px] m-0 mt-0.5 font-medium" style={{ color: C.muted }}>{s.label}</p>
+                    <p className="text-2xl font-black m-0 leading-none" style={{ color: isEvening ? "#fff" : s.color }}>{s.num}</p>
+                    <p className="text-[10px] m-0 mt-1 font-semibold" style={{ color: isEvening ? "rgba(255,255,255,0.5)" : C.muted }}>{s.label}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-xs font-semibold m-0 mt-3 text-center" style={{ color: accent }}>{getDayInsight(calEvents.length, isEvening, dayName)}</p>
+            <p className="text-xs font-semibold m-0 mt-3 text-center" style={{ color: isEvening ? "rgba(255,255,255,0.4)" : accent }}>{getDayInsight(calEvents.length, isEvening, dayName)}</p>
           </div>
 
           {/* Voice */}
@@ -276,7 +280,7 @@ export default function MorningBrief() {
           {/* Calendar */}
           <Section icon="📅" title={isEvening ? "Tomorrow" : "Today's Calendar"} count={calEvents.length} color={accent} live />
           {calEvents.map((e: any) => (
-            <div key={e.id} onClick={() => setSheet({ item: e, type: "cal" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer transition-transform active:scale-[0.98]" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <div key={e.id} onClick={() => setSheet({ item: e, type: "cal" })} className="rounded-[20px] px-4 py-3 mb-2 cursor-pointer transition-all duration-150 hover:shadow-lg hover:-translate-y-[1px] active:scale-[0.98]" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}`, borderLeft: `4px solid ${accent}`, border: isEvening ? `1px solid rgba(255,255,255,0.08)` : undefined, borderLeftWidth: "4px", borderLeftColor: accent }}>
               <div className="flex gap-3.5 items-center">
                 <div className="min-w-[60px] text-center">
                   <p className="text-[13px] font-bold m-0" style={{ color: accent }}>{e.time}</p>
@@ -295,7 +299,7 @@ export default function MorningBrief() {
           {/* Pending Items (consolidated) */}
           <Section icon={<CheckIcon />} title={isEvening ? "Still Pending" : "Pending Items"} count={pendingCount} color={C.urgent} />
           {actionItems.map((a: any) => (
-            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer transition-transform active:scale-[0.98]" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-[20px] px-4 py-3 mb-2 cursor-pointer transition-all duration-150 hover:shadow-lg hover:-translate-y-[1px] active:scale-[0.98]" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}`, borderLeft: `4px solid ${C.urgent}` }}>
               <div className="flex items-center gap-2">
                 <Badge text={a.tag} color={C.urgent} bg={C.urgentBg} />
                 <p className="text-sm font-semibold m-0 flex-1" style={{ color: C.text }}>{a.title}</p>
@@ -304,7 +308,7 @@ export default function MorningBrief() {
             </div>
           ))}
           {followUps.map((f: any) => (
-            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer transition-transform active:scale-[0.98]" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-[20px] px-4 py-3 mb-2 cursor-pointer transition-all duration-150 hover:shadow-lg hover:-translate-y-[1px] active:scale-[0.98]" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}`, borderLeft: `4px solid ${C.urgent}` }}>
               <div className="flex justify-between items-center">
                 <div className="flex-1">
                   <p className="text-sm font-semibold m-0" style={{ color: C.text }}>{f.task}</p>
@@ -338,7 +342,7 @@ export default function MorningBrief() {
           }
           <Section icon={<CheckIcon />} title="Pending" count={pendingCount} color={C.urgent} />
           {actionItems.map((a: any) => (
-            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <div key={a.id} onClick={() => setSheet({ item: a, type: "urgent" })} className="rounded-[20px] px-4 py-3 mb-2 cursor-pointer transition-all duration-150 hover:shadow-lg hover:-translate-y-[1px]" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
               <div className="flex items-center gap-2">
                 <Badge text={a.tag} color={C.urgent} bg={C.urgentBg} />
                 <p className="text-sm font-semibold m-0 flex-1" style={{ color: C.text }}>{a.title}</p>
@@ -347,7 +351,7 @@ export default function MorningBrief() {
             </div>
           ))}
           {followUps.map((f: any) => (
-            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-[20px] px-4 py-3 mb-2 cursor-pointer transition-all duration-150 hover:shadow-lg hover:-translate-y-[1px]" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
               <div className="flex justify-between items-center">
                 <div><p className="text-sm font-semibold m-0" style={{ color: C.text }}>{f.task}</p><div className="flex gap-1.5 mt-1"><span className="text-xs" style={{ color: C.muted }}>{f.name}</span><Badge text={`${f.days}d`} color={f.days >= 4 ? C.urgent : C.later} bg={f.days >= 4 ? C.urgentBg : C.laterBg} /></div></div>
                 <span style={{ color: C.light }}>›</span>
@@ -376,7 +380,7 @@ export default function MorningBrief() {
             </div>
           ))}
           {followUps.map((f: any) => (
-            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-2xl px-4 py-3 mb-2 cursor-pointer" style={{ background: C.card, boxShadow: `0 1px 3px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
+            <div key={f.id} onClick={() => setSheet({ item: f, type: "follow" })} className="rounded-[20px] px-4 py-3 mb-2 cursor-pointer transition-all duration-150 hover:shadow-lg hover:-translate-y-[1px]" style={{ background: isEvening ? "rgba(255,255,255,0.04)" : C.card, boxShadow: isEvening ? "none" : `0 2px 8px ${C.shadow}, 0 0 0 1px ${C.border}` }}>
               <div className="flex justify-between items-center">
                 <div><p className="text-sm font-semibold m-0" style={{ color: C.text }}>{f.task}</p><div className="flex gap-1.5 mt-1"><span className="text-xs" style={{ color: C.muted }}>{f.name}</span><Badge text={`${f.days}d`} color={f.days >= 4 ? C.urgent : C.later} bg={f.days >= 4 ? C.urgentBg : C.laterBg} /></div></div>
                 <span style={{ color: C.light }}>›</span>
@@ -429,13 +433,12 @@ export default function MorningBrief() {
         </>}
       </div>
 
-      {/* Tab Bar */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] flex justify-around py-2 pb-6 z-50 transition-colors duration-500" style={{ background: isEvening ? "rgba(240,237,248,0.94)" : "rgba(247,245,240,0.94)", backdropFilter: "blur(16px)", borderTop: `1px solid ${C.border}` }}>
+      {/* Tab Bar — glass morphism */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] flex justify-around py-2 pb-6 z-50 transition-colors duration-500" style={{ background: isEvening ? "rgba(15,15,26,0.92)" : "rgba(250,250,250,0.88)", backdropFilter: "blur(20px) saturate(180%)", borderTop: `1px solid ${isEvening ? "rgba(255,255,255,0.06)" : C.border}` }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className="bg-transparent border-none cursor-pointer flex flex-col items-center gap-0.5 px-3 py-1 transition-transform active:scale-90">
-            <span className={`flex items-center justify-center ${typeof t.icon === "string" ? "text-xl" : "text-base"}`}>{t.icon}</span>
-            <span className="text-[10px]" style={{ fontWeight: tab === t.id ? 700 : 500, color: tab === t.id ? C.text : C.muted }}>{t.label}</span>
-            {tab === t.id && <div className="w-1 h-1 rounded-full mt-0.5" style={{ background: C.text }} />}
+          <button key={t.id} onClick={() => setTab(t.id)} className="relative border-none cursor-pointer flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition-all duration-200 active:scale-90" style={{ background: tab === t.id ? (isEvening ? "rgba(129,140,248,0.15)" : `${C.email}10`) : "transparent" }}>
+            <span className={`flex items-center justify-center transition-transform duration-200 ${typeof t.icon === "string" ? "text-xl" : "text-base"}`} style={{ transform: tab === t.id ? "scale(1.1)" : "scale(1)" }}>{t.icon}</span>
+            <span className="text-[10px]" style={{ fontWeight: tab === t.id ? 800 : 500, color: tab === t.id ? (isEvening ? "#818CF8" : C.email) : (isEvening ? "rgba(255,255,255,0.4)" : C.muted) }}>{t.label}</span>
           </button>
         ))}
       </div>

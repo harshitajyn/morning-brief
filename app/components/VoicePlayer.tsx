@@ -54,7 +54,7 @@ export function VoicePlayer({
       {/* Icon */}
       <div className="w-[38px] h-[38px] rounded-[10px] bg-white/10 flex items-center justify-center shrink-0">
         <span className="text-[17px]">
-          {st === "playing" ? "\uD83D\uDD0A" : "\uD83C\uDF99"}
+          {st === "playing" ? "🔊" : "🎙"}
         </span>
       </div>
 

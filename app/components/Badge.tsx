@@ -11,7 +11,7 @@ export function Badge({
 }) {
   return (
     <span
-      className="text-[10px] font-bold px-2 py-[2px] rounded-md uppercase tracking-wide whitespace-nowrap"
+      className="text-[10px] font-bold px-2.5 py-[3px] rounded-full uppercase tracking-wider whitespace-nowrap"
       style={{ color, background: bg }}
     >
       {text}
