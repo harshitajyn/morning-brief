@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { C } from "./colors";
 
 export function VoicePlayer({
@@ -12,32 +12,75 @@ export function VoicePlayer({
   isEvening: boolean;
   generateVoiceBrief: (emails: any[], isEvening: boolean) => string;
 }) {
-  const [st, setSt] = useState<"idle" | "playing" | "paused">("idle");
+  const [st, setSt] = useState<"idle" | "loading" | "playing" | "paused">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
-  const play = () => {
-    const u = new SpeechSynthesisUtterance(
-      generateVoiceBrief(emails, isEvening)
-    );
-    u.rate = 0.95;
-    u.pitch = 1;
-    u.lang = "en-US";
-    u.onend = () => setSt("idle");
-    u.onerror = () => setSt("idle");
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-    setSt("playing");
+  const play = async () => {
+    setError(null);
+    setSt("loading");
+    try {
+      const text = generateVoiceBrief(emails, isEvening);
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) {
+        let msg = `TTS failed (${res.status})`;
+        try {
+          const body = await res.json();
+          if (body?.error) msg = body.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      blobUrlRef.current = url;
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setSt("idle");
+        cleanup();
+      };
+      audio.onerror = () => {
+        setSt("idle");
+        cleanup();
+      };
+      await audio.play();
+      setSt("playing");
+    } catch (err: any) {
+      console.error("[VoicePlayer] TTS error:", err);
+      setError(err?.message || "Failed to generate audio");
+      setSt("idle");
+    }
   };
+
   const pause = () => {
-    window.speechSynthesis.pause();
+    audioRef.current?.pause();
     setSt("paused");
   };
+
   const resume = () => {
-    window.speechSynthesis.resume();
+    audioRef.current?.play();
     setSt("playing");
   };
+
   const stop = () => {
-    window.speechSynthesis.cancel();
+    audioRef.current?.pause();
     setSt("idle");
+    cleanup();
+  };
+
+  const cleanup = () => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+    audioRef.current = null;
   };
 
   const accent = isEvening ? C.eve : "#1D1D1F";
@@ -63,21 +106,28 @@ export function VoicePlayer({
         <p className="text-[13px] font-bold text-white m-0">
           Listen to the summary
         </p>
-        <p className="text-[11px] text-white/45 mt-0.5 m-0">
-          {st === "playing"
-            ? "Speaking..."
-            : st === "paused"
-              ? "Paused"
-              : "Tap play"}
+        <p
+          className={`text-[11px] mt-0.5 m-0 truncate ${error ? "text-red-300/80" : "text-white/45"}`}
+        >
+          {error
+            ? error
+            : st === "loading"
+              ? "Generating..."
+              : st === "playing"
+                ? "Speaking..."
+                : st === "paused"
+                  ? "Paused"
+                  : "Tap play"}
         </p>
       </div>
 
       {/* Controls */}
       <div className="flex gap-1.5">
-        {st === "idle" && (
+        {(st === "idle" || st === "loading") && (
           <button
             onClick={play}
-            className="w-9 h-9 rounded-[10px] border-none bg-white cursor-pointer flex items-center justify-center text-sm font-bold transition-transform active:scale-90"
+            disabled={st === "loading"}
+            className="w-9 h-9 rounded-[10px] border-none bg-white cursor-pointer flex items-center justify-center text-sm font-bold transition-transform active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ color: accent }}
             onMouseDown={(e) =>
               (e.currentTarget.style.transform = "scale(0.9)")
