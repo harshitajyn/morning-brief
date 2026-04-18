@@ -114,36 +114,52 @@ export default function MorningBrief() {
   const touchStartY = useRef(0);
   const [pullDistance, setPullDistance] = useState(0);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/data", { cache: "no-store" });
-      const d = await res.json();
-      if (d.emails) setLiveEmails(d.emails);
-      if (d.calToday) setLiveCalToday(d.calToday);
-      if (d.calTomorrow) setLiveCalTomorrow(d.calTomorrow);
-      if (d.actionItems) setActionItems(d.actionItems);
-      if (d.followUps) setFollowUps(d.followUps);
-      if (d.noise) setNoise(d.noise);
-      if (d.live) setIsLive(true);
-    } catch {}
-    // Fetch focus tasks
+  const applyData = useCallback((d: any) => {
+    if (d.emails !== undefined) setLiveEmails(d.emails);
+    if (d.calToday !== undefined) setLiveCalToday(d.calToday);
+    if (d.calTomorrow !== undefined) setLiveCalTomorrow(d.calTomorrow);
+    if (d.actionItems !== undefined) setActionItems(d.actionItems);
+    if (d.followUps !== undefined) setFollowUps(d.followUps);
+    if (d.noise !== undefined) setNoise(d.noise);
+    setIsLive(!!d.live);
+    setLoading(false);
+  }, []);
+
+  const fetchFocusTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/focus");
       const d = await res.json();
       if (d.tasks) setFocusTasks(d.tasks);
     } catch {}
-    setLoading(false);
   }, []);
 
-  const doRefresh = useCallback(() => {
+  const doRefresh = useCallback(async () => {
     setRefreshing(true);
     setNow(new Date());
-    fetchData().finally(() => setTimeout(() => setRefreshing(false), 400));
-  }, [fetchData]);
+    try {
+      const res = await fetch("/api/data", { cache: "no-store" });
+      applyData(await res.json());
+    } catch {}
+    setTimeout(() => setRefreshing(false), 400);
+  }, [applyData]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { const iv = setInterval(doRefresh, 60000); return () => clearInterval(iv); }, [doRefresh]);
-  useEffect(() => { const h = () => { if (document.visibilityState === "visible") doRefresh(); }; document.addEventListener("visibilitychange", h); return () => document.removeEventListener("visibilitychange", h); }, [doRefresh]);
+  // SSE live sync — server pushes updates every 30s
+  useEffect(() => {
+    fetchFocusTasks();
+    const es = new EventSource("/api/sync");
+    es.onmessage = (ev) => {
+      try { applyData(JSON.parse(ev.data)); } catch {}
+    };
+    es.onerror = () => setIsLive(false);
+    return () => es.close();
+  }, [applyData, fetchFocusTasks]);
+
+  // Re-sync on tab focus (instant refresh, doesn't wait for next SSE tick)
+  useEffect(() => {
+    const h = () => { if (document.visibilityState === "visible") doRefresh(); };
+    document.addEventListener("visibilitychange", h);
+    return () => document.removeEventListener("visibilitychange", h);
+  }, [doRefresh]);
   useEffect(() => { save({ dismissed, tab, focusChecked }); }, [dismissed, tab, focusChecked]);
 
   const hr = now.getHours();
