@@ -136,7 +136,7 @@ export async function fetchAllData() {
 
   if (!workAuth && !personalAuth) {
     const local = loadLocalData();
-    if (local) return { ...local, ts: Date.now() };
+    if (local) return { ...local, live: false, ts: Date.now() };
     return { emails: [], calToday: [], calTomorrow: [], live: false, error: "No Google credentials configured.", ts: Date.now() };
   }
 
@@ -171,7 +171,7 @@ export async function fetchAllData() {
     };
   } catch (err: any) {
     const local = loadLocalData();
-    if (local) return { ...local, ts: Date.now() };
+    if (local) return { ...local, live: false, ts: Date.now() };
     return { emails: [], calToday: [], calTomorrow: [], live: false, error: err.message, ts: Date.now() };
   }
 }
